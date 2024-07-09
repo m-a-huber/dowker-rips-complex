@@ -6,7 +6,7 @@ from gph import ripser_parallel
 from datasets_custom.plotting import plot_point_cloud, plot_persistences
 
 
-class WeightComplex(BaseEstimator):
+class DripsComplex(BaseEstimator):
     def __init__(
         self,
         metric="euclidean",
@@ -76,6 +76,7 @@ class WeightComplex(BaseEstimator):
         witnesses
     ):
         ###############
+        # Edge weight given by min dist of midpt to witness
         # midpts = 0.5 * (
         #     vertices[:, None, :] + vertices
         # )
