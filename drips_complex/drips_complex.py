@@ -1,9 +1,9 @@
-from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_is_fitted
 import numpy as np
-from sklearn.metrics import pairwise_distances
+from datasets_custom.plotting import plot_persistences, plot_point_cloud
 from gph import ripser_parallel
-from datasets_custom.plotting import plot_point_cloud, plot_persistences
+from sklearn.base import BaseEstimator
+from sklearn.metrics import pairwise_distances
+from sklearn.utils.validation import check_is_fitted
 
 
 class DripsComplex(BaseEstimator):
@@ -43,7 +43,7 @@ class DripsComplex(BaseEstimator):
         self.persistence_ = ripser_parallel(
             X=self._ripser_input,
             metric="precomputed",
-            maxdim=self.max_dimension-1,
+            maxdim=self.max_dimension - 1,
             thresh=self.max_filtration,
             collapse_edges=True,
             return_generators=False,
@@ -89,6 +89,8 @@ class DripsComplex(BaseEstimator):
         # ripser_input = np.min(norms, axis=0)
         # ripser_input[np.diag_indices_from(input)] = ripser_input.min(axis=1)
         ###############
+        # Vertex wgts: min dist to W
+        # Edge wgts: min_{w\in W}(max[d(v,w), d(v',w)])
         self._dm_ = pairwise_distances(
             self.witnesses_,
             self.vertices_,
