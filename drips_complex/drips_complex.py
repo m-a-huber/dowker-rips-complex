@@ -13,15 +13,44 @@ from typing_extensions import Self
 
 
 class DripsComplex(BaseEstimator):
+    """ #TODO
+
+    Parameters:
+        metric (str, optional): The metric used to compute distance between
+            data points. Must be one of the metrics listed in
+            ``sklearn.metrics.pairwise.PAIRWISE_DISTANCE_FUNCTIONS``.
+            Defaults to `"euclidean"`.
+        max_dimension (int, optional): The maximum homology dimension computed.
+            Will compute all dimensions lower than or equal to this value.
+            Defaults to 2.
+        max_filtration (float, optional): The Maximum value of the Drips
+            filtration parameter. If `np.inf`, the entire filtration is
+            computed. Defaults to `np.inf`.
+
+    Attributes:
+        vertices_ (numpy.ndarray of shape (n_vertices, dim)): NumPy-array
+            containing the vertices.
+        witnesses_ (numpy.ndarray of shape (n_witnesses, dim)): NumPy-array
+            containing the witnesses.
+        persistence_ (list[numpy.ndarray]): The persistent homology computed
+            from the Drips simplicial complex. The format of this data is a
+            list of NumPy-arrays of shape (n_generators, 2), where the i-th
+            entry of the list is an array containing the birth and death times
+            of the homological generators in dimension i-1. In particular, the
+            list starts with 0-dimensional homology and contains information
+            from consecutive homological dimensions.
+
+    References:
+        #TODO
+    """
+
     def __init__(
         self,
         metric: str = "euclidean",
-        p: int = 2,
-        max_dimension: int = 2,
+        max_dimension: int = 1,
         max_filtration: float = np.inf,
     ) -> None:
         self.metric = metric
-        self.p = p
         self.max_dimension = max_dimension
         self.max_filtration = max_filtration
 
@@ -32,6 +61,23 @@ class DripsComplex(BaseEstimator):
         n_threads: int = -1,
         **persistence_kwargs,
     ) -> Self:
+        """Method that fits an Drips instance to a pair of point clouds
+        consisting of vertices and witnesses.
+
+        Args:
+            vertices (numpy.ndarray of shape (n_vertices, dim)): NumPy-array
+                containing the vertices.
+            witnesses (numpy.ndarray of shape (n_witnesses, dim)): NumPy-array
+                containing the witnesses.
+            n_threads (int, optional): Maximum number of threads to be used
+                during the computation in homology dimensions 1 and above. -1
+                means that the maximum number of threads will be used if
+                possible. Defaults to -1.
+
+        Returns:
+            :class:`drips_complex.DripsComplex`: Fitted instance of
+                DripsComplex.
+        """
         self.vertices_ = vertices
         self.witnesses_ = witnesses
         self._labels_vertices_ = np.zeros(len(self.vertices_))
@@ -41,7 +87,6 @@ class DripsComplex(BaseEstimator):
             self._labels_vertices_,
             self._labels_witnesses_
         ])
-        ###############
         self._ripser_input = self._get_ripser_input(
             self.vertices_,
             self.witnesses_
@@ -49,31 +94,13 @@ class DripsComplex(BaseEstimator):
         self.persistence_ = ripser_parallel(
             X=self._ripser_input,
             metric="precomputed",
-            maxdim=self.max_dimension - 1,
+            maxdim=self.max_dimension,
             thresh=self.max_filtration,
             collapse_edges=True,
             return_generators=False,
             n_threads=n_threads,
             **persistence_kwargs
         )["dgms"]
-        ###############
-        # self.weights_ = self._get_weights(
-        #     self.vertices_,
-        #     self.witnesses_
-        # )
-        # self.persistence_ = ripser_parallel(
-        #     X=self.vertices_,
-        #     weights=self.weights_,
-        #     weight_params={"p": self.p},
-        #     metric=self.metric,
-        #     maxdim=self.max_dimension-1,
-        #     thresh=self.max_filtration,
-        #     collapse_edges=True,
-        #     return_generators=False,
-        #     n_threads=n_threads,
-        #     **persistence_kwargs
-        # )["dgms"]
-        ###############
         return self
 
     def _get_ripser_input(
@@ -81,20 +108,6 @@ class DripsComplex(BaseEstimator):
         vertices,
         witnesses,
     ):
-        ###############
-        # Edge weight given by min dist of midpt to witness
-        # midpts = 0.5 * (
-        #     vertices[:, None, :] + vertices
-        # )
-        # diffs = midpts[None, :] - witnesses[:, None, None]
-        # norms = np.linalg.norm(
-        #     diffs,
-        #     ord=self.p,
-        #     axis=-1
-        # )
-        # ripser_input = np.min(norms, axis=0)
-        # ripser_input[np.diag_indices_from(input)] = ripser_input.min(axis=1)
-        ###############
         # Vertex wgts: min dist to W
         # Edge wgts: min_{w\in W}(max[d(v,w), d(v',w)])
         self._dm_ = pairwise_distances(
@@ -109,28 +122,23 @@ class DripsComplex(BaseEstimator):
             ),
             axis=1
         )
-        ###############
         return ripser_input
-
-    # def _get_weights(
-    #     self,
-    #     vertices,
-    #     witnesses,
-    # ):
-    #     self._dm_ = pairwise_distances(
-    #         self.witnesses_,
-    #         self.vertices_,
-    #         metric=self.metric
-    #     )
-    #     return np.min(
-    #         self._dm_,
-    #         axis=0
-    #     )
 
     def plot_persistence(
         self,
         **plotting_kwargs,
     ) -> gobj.Figure:
+        """Method plotting the Drips persistence. Underlying instance must be
+        fitted and have the attribute `persistence_`.
+
+        Args:
+            plotting_kwargs (optional): Arguments passed to the function
+                `datasets_custom.persistence_plotting.plot_persistences`.
+
+        Returns:
+            :class:`plotly.graph_objs._figure.Figure`: A plot of the
+                persistence diagram.
+        """
         check_is_fitted(self, attributes="persistence_")
         fig = plot_persistences(
             [self.persistence_],
@@ -144,6 +152,24 @@ class DripsComplex(BaseEstimator):
         use_colors: bool = True,
         **plotting_kwargs,
     ) -> gobj.Figure:
+        """Method plotting the vertices and witnesses underlying a fitted
+        instance of DripsComplex. Works for point clouds up to dimension three
+        only.
+
+        Args:
+            indicate_witnesses (bool, optional): Whether or not to use a
+                distinguished marker to indicate the witness points.
+                Defaults to True.
+            use_colors (bool, optional): Whether or not to color the vertices
+                and witnesses in different colors. Defaults to True.
+            plotting_kwargs (optional): Arguments passed to the function
+                `datasets_custom.utils.plotting.plot_point_cloud`, such as
+                `marker_size` and `colorscale`.
+
+        Returns:
+            :class:`plotly.graph_objs._figure.Figure`: A plot of the
+                vertex and witness point clouds.
+        """
         check_is_fitted(self, attributes=["vertices_", "witnesses_"])
         if self._points_.shape[1] not in {1, 2, 3}:
             raise Exception(
