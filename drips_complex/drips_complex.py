@@ -1,19 +1,25 @@
 import numpy as np
-from datasets_custom.plotting import plot_persistences, plot_point_cloud
-from gph import ripser_parallel
-from sklearn.base import BaseEstimator
-from sklearn.metrics import pairwise_distances
-from sklearn.utils.validation import check_is_fitted
+import numpy.typing as npt
+import plotly.graph_objects as gobj  # type: ignore
+from datasets_custom.plotting import (  # type: ignore
+    plot_persistences,
+    plot_point_cloud,
+)
+from gph import ripser_parallel  # type: ignore
+from sklearn.base import BaseEstimator  # type: ignore
+from sklearn.metrics import pairwise_distances  # type: ignore
+from sklearn.utils.validation import check_is_fitted  # type: ignore
+from typing_extensions import Self
 
 
 class DripsComplex(BaseEstimator):
     def __init__(
         self,
-        metric="euclidean",
-        p=2,
-        max_dimension=2,
-        max_filtration=np.inf
-    ):
+        metric: str = "euclidean",
+        p: int = 2,
+        max_dimension: int = 2,
+        max_filtration: float = np.inf,
+    ) -> None:
         self.metric = metric
         self.p = p
         self.max_dimension = max_dimension
@@ -21,11 +27,11 @@ class DripsComplex(BaseEstimator):
 
     def fit(
         self,
-        vertices,
-        witnesses,
-        n_threads=-1,
-        **persistence_kwargs
-    ):
+        vertices: npt.NDArray,
+        witnesses: npt.NDArray,
+        n_threads: int = -1,
+        **persistence_kwargs,
+    ) -> Self:
         self.vertices_ = vertices
         self.witnesses_ = witnesses
         self._labels_vertices_ = np.zeros(len(self.vertices_))
@@ -73,7 +79,7 @@ class DripsComplex(BaseEstimator):
     def _get_ripser_input(
         self,
         vertices,
-        witnesses
+        witnesses,
     ):
         ###############
         # Edge weight given by min dist of midpt to witness
@@ -109,7 +115,7 @@ class DripsComplex(BaseEstimator):
     # def _get_weights(
     #     self,
     #     vertices,
-    #     witnesses
+    #     witnesses,
     # ):
     #     self._dm_ = pairwise_distances(
     #         self.witnesses_,
@@ -121,7 +127,10 @@ class DripsComplex(BaseEstimator):
     #         axis=0
     #     )
 
-    def plot_persistence(self, **plotting_kwargs):
+    def plot_persistence(
+        self,
+        **plotting_kwargs,
+    ) -> gobj.Figure:
         check_is_fitted(self, attributes="persistence_")
         fig = plot_persistences(
             [self.persistence_],
@@ -131,10 +140,10 @@ class DripsComplex(BaseEstimator):
 
     def plot_points(
         self,
-        indicate_witnesses=True,
-        use_colors=True,
-        **plotting_kwargs
-    ):
+        indicate_witnesses: bool = True,
+        use_colors: bool = True,
+        **plotting_kwargs,
+    ) -> gobj.Figure:
         check_is_fitted(self, attributes=["vertices_", "witnesses_"])
         if self._points_.shape[1] not in {1, 2, 3}:
             raise Exception(
