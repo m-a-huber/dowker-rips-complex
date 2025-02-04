@@ -87,12 +87,12 @@ class DripsComplex(BaseEstimator):
             self._labels_vertices_,
             self._labels_witnesses_
         ])
-        self._ripser_input = self._get_ripser_input(
+        self._ripser_input_ = self._get_ripser_input(
             self.vertices_,
             self.witnesses_
         )
         self.persistence_ = ripser_parallel(
-            X=self._ripser_input,
+            X=self._ripser_input_,
             metric="precomputed",
             maxdim=self.max_dimension,
             thresh=self.max_filtration,
