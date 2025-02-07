@@ -128,19 +128,31 @@ class DripsComplex(BaseEstimator):
     ):
         # Vertex wgts: min dist to W
         # Edge wgts: min_{w\in W}(max[d(v,w), d(v',w)])
-        self._dm_ = pairwise_distances(
-            self.witnesses_,
-            self.vertices_,
-            metric=self.metric,
-        ).astype(dtype)
-        ripser_input = np.min(
-            np.maximum(
-                self._dm_.T[:, :, None],
-                self._dm_[None, :, :]
-            ),
-            axis=1,
-        )
-        return ripser_input
+        try:
+            self._dm_ = pairwise_distances(
+                self.witnesses_,
+                self.vertices_,
+                metric=self.metric,
+            ).astype(dtype)
+            ripser_input = np.min(
+                np.maximum(
+                    self._dm_.T[:, :, None],
+                    self._dm_[None, :, :]
+                ),
+                axis=1,
+            )
+            return ripser_input
+        except MemoryError:
+            # TODO: optimize this
+            n_vertices = self.vertices_.shape[0]
+            ripser_input = np.zeros((n_vertices, n_vertices))
+            dm = pairwise_distances(self.witnesses_, self.witnesses_)
+            for i in range(n_vertices):
+                for j in range(i, n_vertices):
+                    ripser_input[i, j] = np.min(np.maximum(dm[:, i], dm[:, j]))
+                    ripser_input[j, i] = ripser_input[i, j]
+
+            return ripser_input
 
     def plot_persistence(
         self,
