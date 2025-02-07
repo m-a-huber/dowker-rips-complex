@@ -22,7 +22,7 @@ class DripsComplex(BaseEstimator):
             Defaults to `"euclidean"`.
         max_dimension (int, optional): The maximum homology dimension computed.
             Will compute all dimensions lower than or equal to this value.
-            Defaults to 2.
+            Defaults to 1.
         max_filtration (float, optional): The Maximum value of the Drips
             filtration parameter. If `np.inf`, the entire filtration is
             computed. Defaults to `np.inf`.
@@ -59,6 +59,8 @@ class DripsComplex(BaseEstimator):
         vertices: npt.NDArray,
         witnesses: npt.NDArray,
         n_threads: int = -1,
+        precision: str = "double",
+        swap: bool = False,
         **persistence_kwargs,
     ) -> Self:
         """Method that fits an Drips instance to a pair of point clouds
@@ -73,13 +75,31 @@ class DripsComplex(BaseEstimator):
                 during the computation in homology dimensions 1 and above. -1
                 means that the maximum number of threads will be used if
                 possible. Defaults to -1.
+            precision (str, optional): Floating point precision to be used
+                throughout computation. Must be one of `"double"`, `"single"`
+                and `"half"`. Defaults to `"double"`
+            swap (bool, optional): Whether or not to potentially swap the roles
+                of vertices and witnesses to compute the less expensive variant
+                of persistent homology (both are guaranteed to coincide).
+                Defaults to False.
 
         Returns:
             :class:`drips_complex.DripsComplex`: Fitted instance of
                 DripsComplex.
         """
-        self.vertices_ = vertices
-        self.witnesses_ = witnesses
+        self.precision_ = precision
+        match self.precision_:
+            case "double":
+                dtype = np.float64
+            case "single":
+                dtype = np.float32  # type: ignore
+            case "half":
+                dtype = np.float16  # type: ignore
+        self.swap_ = swap
+        if self.swap_ and len(vertices) > len(witnesses):
+            vertices, witnesses = witnesses, vertices
+        self.vertices_ = vertices.astype(dtype)
+        self.witnesses_ = witnesses.astype(dtype)
         self._labels_vertices_ = np.zeros(len(self.vertices_))
         self._labels_witnesses_ = -np.ones(len(self.witnesses_))
         self._points_ = np.concatenate([self.vertices_, self.witnesses_])
@@ -89,7 +109,8 @@ class DripsComplex(BaseEstimator):
         ])
         self._ripser_input_ = self._get_ripser_input(
             self.vertices_,
-            self.witnesses_
+            self.witnesses_,
+            dtype,
         )
         self.persistence_ = ripser_parallel(
             X=self._ripser_input_,
@@ -99,7 +120,7 @@ class DripsComplex(BaseEstimator):
             collapse_edges=True,
             return_generators=False,
             n_threads=n_threads,
-            **persistence_kwargs
+            **persistence_kwargs,
         )["dgms"]
         return self
 
@@ -107,20 +128,21 @@ class DripsComplex(BaseEstimator):
         self,
         vertices,
         witnesses,
+        dtype,
     ):
         # Vertex wgts: min dist to W
         # Edge wgts: min_{w\in W}(max[d(v,w), d(v',w)])
         self._dm_ = pairwise_distances(
             self.witnesses_,
             self.vertices_,
-            metric=self.metric
-        )
+            metric=self.metric,
+        ).astype(dtype)
         ripser_input = np.min(
             np.maximum(
                 self._dm_.T[:, :, None],
                 self._dm_[None, :, :]
             ),
-            axis=1
+            axis=1,
         )
         return ripser_input
 
@@ -142,7 +164,7 @@ class DripsComplex(BaseEstimator):
         check_is_fitted(self, attributes="persistence_")
         fig = plot_persistences(
             [self.persistence_],
-            **plotting_kwargs
+            **plotting_kwargs,
         )
         return fig
 
@@ -182,5 +204,5 @@ class DripsComplex(BaseEstimator):
             indicate_outliers=indicate_witnesses,
             indicate_labels=use_colors,
             colorscale="wong",
-            **plotting_kwargs
+            **plotting_kwargs,
         )
