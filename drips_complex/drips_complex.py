@@ -6,10 +6,50 @@ from datasets_custom.plotting import (  # type: ignore
     plot_point_cloud,
 )
 from gph import ripser_parallel  # type: ignore
+from numba import jit, prange  # type: ignore
 from sklearn.base import BaseEstimator  # type: ignore
 from sklearn.metrics import pairwise_distances  # type: ignore
 from sklearn.utils.validation import check_is_fitted  # type: ignore
 from typing_extensions import Self
+
+
+def aux_1(n_vertices, dm):
+    ripser_input = np.zeros((n_vertices, n_vertices))
+    for i in range(n_vertices):
+        for j in range(i, n_vertices):
+            ripser_input[i, j] = np.min(np.maximum(dm[:, i], dm[:, j]))
+            ripser_input[j, i] = ripser_input[i, j]
+    return ripser_input
+
+
+@jit(nopython=True, parallel=False)
+def aux_2(n_vertices, dm):
+    ripser_input = np.zeros((n_vertices, n_vertices))
+    for i in range(n_vertices):
+        for j in range(i, n_vertices):
+            ripser_input[i, j] = np.min(np.maximum(dm[:, i], dm[:, j]))
+            ripser_input[j, i] = ripser_input[i, j]
+    return ripser_input
+
+
+@jit(nopython=False, parallel=True)
+def aux_3(n_vertices, dm):
+    ripser_input = np.zeros((n_vertices, n_vertices))
+    for i in prange(n_vertices):
+        for j in prange(i, n_vertices):
+            ripser_input[i, j] = np.min(np.maximum(dm[:, i], dm[:, j]))
+            ripser_input[j, i] = ripser_input[i, j]
+    return ripser_input
+
+
+@jit(nopython=True, parallel=True)
+def aux_4(n_vertices, dm):
+    ripser_input = np.zeros((n_vertices, n_vertices))
+    for i in prange(n_vertices):
+        for j in prange(i, n_vertices):
+            ripser_input[i, j] = np.min(np.maximum(dm[:, i], dm[:, j]))
+            ripser_input[j, i] = ripser_input[i, j]
+    return ripser_input
 
 
 class DripsComplex(BaseEstimator):
@@ -58,6 +98,8 @@ class DripsComplex(BaseEstimator):
         self,
         vertices: npt.NDArray,
         witnesses: npt.NDArray,
+        nopython=False,
+        parallel=False,
         n_threads: int = -1,
         precision: str = "double",
         swap: bool = False,
@@ -87,6 +129,8 @@ class DripsComplex(BaseEstimator):
             :class:`drips_complex.DripsComplex`: Fitted instance of
                 DripsComplex.
         """
+        self.nopython = nopython
+        self.parallel = parallel
         self.precision_ = precision
         match self.precision_:
             case "double":
@@ -129,6 +173,7 @@ class DripsComplex(BaseEstimator):
         # Vertex wgts: min dist to W
         # Edge wgts: min_{w\in W}(max[d(v,w), d(v',w)])
         try:
+            raise MemoryError
             self._dm_ = pairwise_distances(
                 self.witnesses_,
                 self.vertices_,
@@ -145,13 +190,25 @@ class DripsComplex(BaseEstimator):
         except MemoryError:
             # TODO: optimize this
             n_vertices = self.vertices_.shape[0]
-            ripser_input = np.zeros((n_vertices, n_vertices))
             dm = pairwise_distances(self.witnesses_, self.witnesses_)
-            for i in range(n_vertices):
-                for j in range(i, n_vertices):
-                    ripser_input[i, j] = np.min(np.maximum(dm[:, i], dm[:, j]))
-                    ripser_input[j, i] = ripser_input[i, j]
-
+            # ripser_input = np.zeros((n_vertices, n_vertices))
+            # for i in range(n_vertices):
+            #     for j in range(i, n_vertices):
+            #         ripser_input[i, j] = np.min(
+            #             np.maximum(dm[:, i], dm[:, j])
+            #         )
+            #         ripser_input[j, i] = ripser_input[i, j]
+            # return ripser_input
+            if not max(self.nopython, self.parallel):
+                fcn = aux_1
+            elif self.nopython:
+                if not self.parallel:
+                    fcn = aux_2
+                else:
+                    fcn = aux_4
+            if not self.nopython:
+                fcn = aux_3
+            ripser_input = fcn(n_vertices, dm)
             return ripser_input
 
     def plot_persistence(
@@ -217,9 +274,9 @@ class DripsComplex(BaseEstimator):
 
 
 if __name__ == "__main__":
-    X = np.random.randn(1000, 512)
     n = 1000
     ratio_vertices = 0.9
+    X = np.random.randn(n, 512)
     V, W = X[:int(ratio_vertices * n)], X[int(ratio_vertices) * n:]
     drc = DripsComplex().fit(V, W)
     print("Success.")
