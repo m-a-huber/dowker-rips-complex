@@ -108,8 +108,6 @@ class DripsComplex(BaseEstimator):
             self._labels_witnesses_
         ])
         self._ripser_input_ = self._get_ripser_input(
-            self.vertices_,
-            self.witnesses_,
             dtype,
         )
         self.persistence_ = ripser_parallel(
@@ -126,8 +124,6 @@ class DripsComplex(BaseEstimator):
 
     def _get_ripser_input(
         self,
-        vertices,
-        witnesses,
         dtype,
     ):
         # Vertex wgts: min dist to W
