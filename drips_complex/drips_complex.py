@@ -214,3 +214,12 @@ class DripsComplex(BaseEstimator):
             colorscale="wong",
             **plotting_kwargs,
         )
+
+
+if __name__ == "__main__":
+    X = np.random.randn(1000, 512)
+    n = 1000
+    ratio_vertices = 0.9
+    V, W = X[:int(ratio_vertices * n)], X[int(ratio_vertices) * n:]
+    drc = DripsComplex().fit(V, W)
+    print("Success.")
