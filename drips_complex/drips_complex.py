@@ -1,10 +1,6 @@
 import numpy as np
 import numpy.typing as npt
 import plotly.graph_objects as gobj  # type: ignore
-from datasets_custom.plotting import (  # type: ignore
-    plot_persistences,
-    plot_point_cloud,
-)
 from gph import ripser_parallel  # type: ignore
 from numba import jit, prange  # type: ignore
 from sklearn.base import BaseEstimator  # type: ignore
@@ -12,44 +8,10 @@ from sklearn.metrics import pairwise_distances  # type: ignore
 from sklearn.utils.validation import check_is_fitted  # type: ignore
 from typing_extensions import Self
 
-
-def aux_1(n_vertices, dm):
-    ripser_input = np.zeros((n_vertices, n_vertices))
-    for i in range(n_vertices):
-        for j in range(i, n_vertices):
-            ripser_input[i, j] = np.min(np.maximum(dm[:, i], dm[:, j]))
-            ripser_input[j, i] = ripser_input[i, j]
-    return ripser_input
-
-
-@jit(nopython=True, parallel=False)
-def aux_2(n_vertices, dm):
-    ripser_input = np.zeros((n_vertices, n_vertices))
-    for i in range(n_vertices):
-        for j in range(i, n_vertices):
-            ripser_input[i, j] = np.min(np.maximum(dm[:, i], dm[:, j]))
-            ripser_input[j, i] = ripser_input[i, j]
-    return ripser_input
-
-
-@jit(nopython=False, parallel=True)
-def aux_3(n_vertices, dm):
-    ripser_input = np.zeros((n_vertices, n_vertices))
-    for i in prange(n_vertices):
-        for j in prange(i, n_vertices):
-            ripser_input[i, j] = np.min(np.maximum(dm[:, i], dm[:, j]))
-            ripser_input[j, i] = ripser_input[i, j]
-    return ripser_input
-
-
-@jit(nopython=True, parallel=True)
-def aux_4(n_vertices, dm):
-    ripser_input = np.zeros((n_vertices, n_vertices))
-    for i in prange(n_vertices):
-        for j in prange(i, n_vertices):
-            ripser_input[i, j] = np.min(np.maximum(dm[:, i], dm[:, j]))
-            ripser_input[j, i] = ripser_input[i, j]
-    return ripser_input
+from plotting import (  # type: ignore
+    plot_persistences,
+    plot_point_cloud,
+)
 
 
 class DripsComplex(BaseEstimator):
@@ -66,6 +28,8 @@ class DripsComplex(BaseEstimator):
         max_filtration (float, optional): The Maximum value of the Drips
             filtration parameter. If `np.inf`, the entire filtration is
             computed. Defaults to `np.inf`.
+        verbose (bool, optional): Whether or not to display print some progress
+            during fitting. Defaults to False.
 
     Attributes:
         vertices_ (numpy.ndarray of shape (n_vertices, dim)): NumPy-array
@@ -89,10 +53,22 @@ class DripsComplex(BaseEstimator):
         metric: str = "euclidean",
         max_dimension: int = 1,
         max_filtration: float = np.inf,
+        verbose: bool = False,
     ) -> None:
         self.metric = metric
         self.max_dimension = max_dimension
         self.max_filtration = max_filtration
+        self.verbose = verbose
+
+    def vprint(
+        self,
+        s: str,
+    ) -> None:
+        if self.verbose:
+            print(s)
+        else:
+            pass
+        return
 
     def fit(
         self,
@@ -151,9 +127,12 @@ class DripsComplex(BaseEstimator):
             self._labels_vertices_,
             self._labels_witnesses_
         ])
+        self.vprint("Getting ripser input...")
         self._ripser_input_ = self._get_ripser_input(
             dtype,
         )
+        self.vprint("Done getting ripser input.")
+        self.vprint("Computing persistent homology...")
         self.persistence_ = ripser_parallel(
             X=self._ripser_input_,
             metric="precomputed",
@@ -164,6 +143,7 @@ class DripsComplex(BaseEstimator):
             n_threads=n_threads,
             **persistence_kwargs,
         )["dgms"]
+        self.vprint("Done computing persistent homology.")
         return self
 
     def _get_ripser_input(
@@ -172,44 +152,19 @@ class DripsComplex(BaseEstimator):
     ):
         # Vertex wgts: min dist to W
         # Edge wgts: min_{w\in W}(max[d(v,w), d(v',w)])
-        try:
-            raise MemoryError
-            self._dm_ = pairwise_distances(
-                self.witnesses_,
-                self.vertices_,
-                metric=self.metric,
-            ).astype(dtype)
-            ripser_input = np.min(
-                np.maximum(
-                    self._dm_.T[:, :, None],
-                    self._dm_[None, :, :]
-                ),
-                axis=1,
-            )
+        @jit(nopython=True, parallel=True)
+        def _ripser_input_numba(dm):
+            n = dm.shape[0]
+            ripser_input = np.empty((n, n), dtype=dtype)
+            for i in prange(n):
+                for j in range(i, n):
+                    dist = np.min(np.maximum(dm[i], dm[j]))
+                    ripser_input[i, j] = dist
+                    ripser_input[j, i] = dist
             return ripser_input
-        except MemoryError:
-            # TODO: optimize this
-            n_vertices = self.vertices_.shape[0]
-            dm = pairwise_distances(self.witnesses_, self.witnesses_)
-            # ripser_input = np.zeros((n_vertices, n_vertices))
-            # for i in range(n_vertices):
-            #     for j in range(i, n_vertices):
-            #         ripser_input[i, j] = np.min(
-            #             np.maximum(dm[:, i], dm[:, j])
-            #         )
-            #         ripser_input[j, i] = ripser_input[i, j]
-            # return ripser_input
-            if not max(self.nopython, self.parallel):
-                fcn = aux_1
-            elif self.nopython:
-                if not self.parallel:
-                    fcn = aux_2
-                else:
-                    fcn = aux_4
-            if not self.nopython:
-                fcn = aux_3
-            ripser_input = fcn(n_vertices, dm)
-            return ripser_input
+        return _ripser_input_numba(
+            pairwise_distances(self.vertices_, self.witnesses_)
+        )
 
     def plot_persistence(
         self,
