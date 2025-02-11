@@ -3,6 +3,9 @@ name = "drips-complex"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
+authors = [
+    { name = "m-a-huber", email = "hubermarius@hotmail.com" }
+]
 requires-python = ">=3.10"
 dependencies = [
     "giotto-ph>=0.2.4",
@@ -13,3 +16,10 @@ dependencies = [
     "scikit-learn>=1.6.1",
     "typing-extensions>=4.12.2",
 ]
+
+[project.scripts]
+drips-complex = "drips_complex:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
