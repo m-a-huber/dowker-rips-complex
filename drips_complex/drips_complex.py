@@ -8,14 +8,15 @@ from sklearn.metrics import pairwise_distances  # type: ignore
 from sklearn.utils.validation import check_is_fitted  # type: ignore
 from typing_extensions import Self
 
-from plotting import (  # type: ignore
-    plot_persistences,
-    plot_point_cloud,
-)
+from plotting.persistence_plotting import plot_persistences  # type: ignore
+from plotting.point_cloud_plotting import plot_point_cloud  # type: ignore
 
 
 class DripsComplex(BaseEstimator):
-    """ #TODO
+    """ Class implementing the Dowker-Rips complex associated to a point cloud
+    whose elements are separated into two classes. The data points on which the
+    simplicial complex is constructed are referred to as "vertices", while the
+    other ones are referred to as "witnesses".
 
     Parameters:
         metric (str, optional): The metric used to compute distance between
@@ -24,12 +25,12 @@ class DripsComplex(BaseEstimator):
             Defaults to `"euclidean"`.
         max_dimension (int, optional): The maximum homology dimension computed.
             Will compute all dimensions lower than or equal to this value.
-            Defaults to 1.
+            Defaults to `1`.
         max_filtration (float, optional): The Maximum value of the Drips
             filtration parameter. If `np.inf`, the entire filtration is
             computed. Defaults to `np.inf`.
         verbose (bool, optional): Whether or not to display print some progress
-            during fitting. Defaults to False.
+            during fitting. Defaults to `False`.
 
     Attributes:
         vertices_ (numpy.ndarray of shape (n_vertices, dim)): NumPy-array
@@ -38,7 +39,7 @@ class DripsComplex(BaseEstimator):
             containing the witnesses.
         persistence_ (list[numpy.ndarray]): The persistent homology computed
             from the Drips simplicial complex. The format of this data is a
-            list of NumPy-arrays of shape (n_generators, 2), where the i-th
+            list of NumPy-arrays of shape `(n_generators, 2)`, where the i-th
             entry of the list is an array containing the birth and death times
             of the homological generators in dimension i-1. In particular, the
             list starts with 0-dimensional homology and contains information
@@ -74,15 +75,13 @@ class DripsComplex(BaseEstimator):
         self,
         vertices: npt.NDArray,
         witnesses: npt.NDArray,
-        nopython=False,
-        parallel=False,
         n_threads: int = -1,
         precision: str = "double",
         swap: bool = False,
         **persistence_kwargs,
     ) -> Self:
-        """Method that fits an Drips instance to a pair of point clouds
-        consisting of vertices and witnesses.
+        """Method that fits an `DripsComplex`-instance to a pair of point
+        clouds consisting of vertices and witnesses.
 
         Args:
             vertices (numpy.ndarray of shape (n_vertices, dim)): NumPy-array
@@ -90,23 +89,20 @@ class DripsComplex(BaseEstimator):
             witnesses (numpy.ndarray of shape (n_witnesses, dim)): NumPy-array
                 containing the witnesses.
             n_threads (int, optional): Maximum number of threads to be used
-                during the computation in homology dimensions 1 and above. -1
+                during the computation in homology dimensions 1 and above. `-1`
                 means that the maximum number of threads will be used if
-                possible. Defaults to -1.
+                possible. Defaults to `1`.
             precision (str, optional): Floating point precision to be used
                 throughout computation. Must be one of `"double"`, `"single"`
                 and `"half"`. Defaults to `"double"`
             swap (bool, optional): Whether or not to potentially swap the roles
                 of vertices and witnesses to compute the less expensive variant
-                of persistent homology (both are guaranteed to coincide).
-                Defaults to False.
+                of persistent homology. Defaults to `False`.
 
         Returns:
             :class:`drips_complex.DripsComplex`: Fitted instance of
-                DripsComplex.
+                `DripsComplex`.
         """
-        self.nopython = nopython
-        self.parallel = parallel
         self.precision_ = precision
         match self.precision_:
             case "double":
@@ -170,12 +166,14 @@ class DripsComplex(BaseEstimator):
         self,
         **plotting_kwargs,
     ) -> gobj.Figure:
-        """Method plotting the Drips persistence. Underlying instance must be
-        fitted and have the attribute `persistence_`.
+        """Method plotting the persistent homology of a Dowker-Rips complex.
+        Underlying instance of `DripsComplex` must be fitted and have the
+        attribute `persistence_`.
 
         Args:
-            plotting_kwargs (optional): Arguments passed to the function
-                `datasets_custom.persistence_plotting.plot_persistences`.
+            plotting_kwargs (optional): Keyword arguments passed to the
+                function `plotting.persistence_plotting.plot_persistences`,
+                such as `marker_size`.
 
         Returns:
             :class:`plotly.graph_objs._figure.Figure`: A plot of the
@@ -194,19 +192,20 @@ class DripsComplex(BaseEstimator):
         use_colors: bool = True,
         **plotting_kwargs,
     ) -> gobj.Figure:
-        """Method plotting the vertices and witnesses underlying a fitted
-        instance of DripsComplex. Works for point clouds up to dimension three
-        only.
+        """Method plotting the vertices and witnesses of a Dowker-Rips complex.
+        Underlying instance of `DripsComplex` must be fitted and have the
+        attributes `vertices_` and `witnesses_`. Works for point clouds up to
+        dimension three only.
 
         Args:
             indicate_witnesses (bool, optional): Whether or not to use a
                 distinguished marker to indicate the witness points.
-                Defaults to True.
+                Defaults to `True`.
             use_colors (bool, optional): Whether or not to color the vertices
-                and witnesses in different colors. Defaults to True.
-            plotting_kwargs (optional): Arguments passed to the function
-                `datasets_custom.utils.plotting.plot_point_cloud`, such as
-                `marker_size` and `colorscale`.
+                and witnesses in different colors. Defaults to `True`.
+            plotting_kwargs (optional): Keyword arguments passed to the
+                function `plotting.point_cloud_plotting.plot_point_cloud`, such
+                as `marker_size` and `colorscale`.
 
         Returns:
             :class:`plotly.graph_objs._figure.Figure`: A plot of the
@@ -229,7 +228,7 @@ class DripsComplex(BaseEstimator):
 
 
 if __name__ == "__main__":
-    n = 1000
+    n = 100
     ratio_vertices = 0.9
     X = np.random.randn(n, 512)
     V, W = X[:int(ratio_vertices * n)], X[int(ratio_vertices) * n:]
