@@ -272,9 +272,10 @@ def plot_point_cloud(
             )
     elif radius is not None:
         radius_kwargs = dict()
-    radius_kwargs["opacity"] = radius_kwargs.get("opacity", 0.2)
-    radius_kwargs["fillcolor"] = radius_kwargs.get("fillcolor", "red")
-    radius_kwargs["line_color"] = radius_kwargs.get("line_color", "red")
+    if radius is not None:
+        radius_kwargs["opacity"] = radius_kwargs.get("opacity", 0.2)
+        radius_kwargs["fillcolor"] = radius_kwargs.get("fillcolor", "red")
+        radius_kwargs["line_color"] = radius_kwargs.get("line_color", "red")
     # Validate `lines` parameter
     if lines is not None:
         if dimension != 2:
