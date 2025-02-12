@@ -6,41 +6,15 @@ from drips_complex import DripsComplex  # type: ignore
 
 
 @pytest.fixture
-def data_2_dim():
-    n, dim = 500, 2
-    ratio_vertices = 0.9
-    X, y = list(
-        train_test_split(
-            np.random.randn(n, dim),
-            train_size=ratio_vertices
-        )
-    ), None
-    return X, y
-
-
-@pytest.fixture
-def data_3_dim():
-    n, dim = 500, 3
-    ratio_vertices = 0.9
-    X, y = list(
-        train_test_split(
-            np.random.randn(n, dim),
-            train_size=ratio_vertices
-        )
-    ), None
-    return X, y
-
-
-@pytest.fixture
-def data_high_dim():
+def random_data():
     n, dim = 500, 512
     ratio_vertices = 0.9
-    X, y = list(
-        train_test_split(
-            np.random.randn(n, dim),
-            train_size=ratio_vertices
-        )
-    ), None
+    X, y = (
+        list(train_test_split(
+            np.random.randn(n, dim), train_size=ratio_vertices)
+        ),
+        None,
+    )
     return X, y
 
 
@@ -81,32 +55,37 @@ def octagon():
     return X, y
 
 
-def test_drips_complex(data_high_dim):
+def test_drips_complex(random_data):
     """
     Check whether `DripsComplex` runs at all and plots.
     """
+    X, y = random_data
     drc = DripsComplex()
-    drc.fit_transform(*data_high_dim)
+    drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
 
 
-def test_drips_complex_plotting_2d(data_2_dim):
+def test_drips_complex_plotting_2d(random_data):
     """
     Check whether `DripsComplex` plots 2D data.
     """
+    X, y = random_data
+    X = [pt_cloud[:, :2] for pt_cloud in X]
     drc = DripsComplex()
-    drc.fit_transform(*data_2_dim)
+    drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
     drc.plot_points()
     drc.plot_persistence()
 
 
-def test_drips_complex_plotting_3d(data_3_dim):
+def test_drips_complex_plotting_3d(random_data):
     """
     Check whether `DripsComplex` plots 3D data.
     """
+    X, y = random_data
+    X = [pt_cloud[:, :3] for pt_cloud in X]
     drc = DripsComplex()
-    drc.fit_transform(*data_3_dim)
+    drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
     drc.plot_points()
     drc.plot_persistence()

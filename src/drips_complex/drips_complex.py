@@ -14,7 +14,7 @@ from .plotting.point_cloud_plotting import plot_point_cloud  # type: ignore
 
 
 class DripsComplex(TransformerMixin, BaseEstimator):
-    """ Class implementing the Dowker-Rips complex associated to a point cloud
+    """Class implementing the Dowker-Rips complex associated to a point cloud
     whose elements are separated into two classes. The data points on which the
     simplicial complex is constructed are referred to as "vertices", while the
     other ones are referred to as "witnesses".
@@ -120,10 +120,9 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         self._labels_vertices_ = np.zeros(len(self.vertices_))
         self._labels_witnesses_ = -np.ones(len(self.witnesses_))
         self._points_ = np.concatenate([self.vertices_, self.witnesses_])
-        self._labels_ = np.concatenate([
-            self._labels_vertices_,
-            self._labels_witnesses_
-        ])
+        self._labels_ = np.concatenate(
+            [self._labels_vertices_, self._labels_witnesses_]
+        )
         self.vprint("Getting ripser input...")
         self._ripser_input_ = self._get_ripser_input()
         self.vprint("Done getting ripser input.")
@@ -152,6 +151,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
                     ripser_input[i, j] = dist
                     ripser_input[j, i] = dist
             return ripser_input
+
         return _ripser_input_numba(
             pairwise_distances(
                 X=self.vertices_,

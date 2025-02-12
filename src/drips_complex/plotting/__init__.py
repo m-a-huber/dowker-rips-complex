@@ -15,5 +15,5 @@ __all__ = [
     "format_gudhi_persistence",
     "plot_point_cloud",
     "cloud_from_fcn_2_dim",
-    "cloud_from_fcn_3_dim"
+    "cloud_from_fcn_3_dim",
 ]

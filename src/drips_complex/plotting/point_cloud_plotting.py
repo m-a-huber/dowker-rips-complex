@@ -8,26 +8,26 @@ from . import cs_wong
 
 
 def plot_point_cloud(
-        point_cloud,
-        labels=None,
-        dimension=None,
-        names=None,
-        marker_size=4.0,
-        indicate_outliers=True,
-        indicate_labels=True,
-        opacity=0.8,
-        to_scale=False,
-        colorscale=None,
-        with_colorbar=False,
-        title=None,
-        radius=None,
-        radius_kwargs=None,
-        lines=None,
-        line_width=1.0,
-        arrows=None,
-        arrow_width=3.0,
-        display_plot=False,
-        plotly_params=None
+    point_cloud,
+    labels=None,
+    dimension=None,
+    names=None,
+    marker_size=4.0,
+    indicate_outliers=True,
+    indicate_labels=True,
+    opacity=0.8,
+    to_scale=False,
+    colorscale=None,
+    with_colorbar=False,
+    title=None,
+    radius=None,
+    radius_kwargs=None,
+    lines=None,
+    line_width=1.0,
+    arrows=None,
+    arrow_width=3.0,
+    display_plot=False,
+    plotly_params=None,
 ):
     """Function plotting the first 2 or 3 coordinates of a point cloud.
     Note: this function does not work on 1D arrays. Inspired by and building
@@ -161,8 +161,8 @@ def plot_point_cloud(
         )
     if names is not None:
         if not (
-            all(isinstance(key, int) for key in names) and
-            all(isinstance(names[key], str) for key in names)
+            all(isinstance(key, int) for key in names)
+            and all(isinstance(names[key], str) for key in names)
         ):
             raise ValueError(
                 "The `names` parameter must be a dictionary whose keys and "
@@ -185,9 +185,9 @@ def plot_point_cloud(
             raise ValueError("All values of `names` should be strings.")
     # Validate `marker_size` parameter
     if not (
-        isinstance(marker_size, (int, float)) and
-        marker_size > 0 and
-        marker_size < float("inf")
+        isinstance(marker_size, (int, float))
+        and marker_size > 0
+        and marker_size < float("inf")
     ):
         raise ValueError(
             "The `marker_size` parameter must be a finite positive number."
@@ -199,9 +199,9 @@ def plot_point_cloud(
         )
     # Validate `opacity` parameter
     if not (
-        isinstance(opacity, (int, float)) and
-        opacity > 0 and
-        opacity <= 1
+        isinstance(opacity, (int, float))
+        and opacity > 0
+        and opacity <= 1
     ):
         raise ValueError(
             "The `opacity` parameter must be a number in (0, 1]."
@@ -218,8 +218,8 @@ def plot_point_cloud(
             "be either a string or None."
         )
         if (
-            colorscale is not None and
-            colorscale not in px.colors.named_colorscales()
+            colorscale is not None
+            and colorscale not in px.colors.named_colorscales()
         ):
             raise ValueError(
                 "The `colorscale` parameter must be either None or a string "
@@ -255,8 +255,8 @@ def plot_point_cloud(
                 f"says: '{exc}'."
             )
         if not (
-            radius.ndim == 1 and
-            radius.shape == (point_cloud.shape[0],)
+            radius.ndim == 1
+            and radius.shape == (point_cloud.shape[0],)
         ):
             raise ValueError(
                 "The `radius` parameter must be either None, a float or "
@@ -291,8 +291,8 @@ def plot_point_cloud(
                 f"into a NumPy-array of floats. However, NumPy says: '{exc}'."
             )
         if not (
-            lines.ndim == 3 and
-            lines.shape[1:] == (2, 2)
+            lines.ndim == 3
+            and lines.shape[1:] == (2, 2)
         ):
             raise ValueError(
                 "The `lines` parameter must be either None or convertible "
@@ -300,9 +300,9 @@ def plot_point_cloud(
             )
     # Validate `line_width` parameter
     if not (
-        isinstance(line_width, (int, float)) and
-        line_width > 0 and
-        line_width < float("inf")
+        isinstance(line_width, (int, float))
+        and line_width > 0
+        and line_width < float("inf")
     ):
         raise ValueError(
             "The `line_width` parameter must be a finite positive number."
@@ -311,8 +311,7 @@ def plot_point_cloud(
     if arrows is not None:
         if dimension != 2:
             raise ValueError(
-                "The arrow feature is available for "
-                "2-dimensional plots only."
+                "The arrow feature is available for 2-dimensional plots only."
             )
         try:
             arrows = np.asarray(arrows, dtype=float)
@@ -322,8 +321,8 @@ def plot_point_cloud(
                 f"into a NumPy-array of floats. However, NumPy says: '{exc}'."
             )
         if not (
-            arrows.ndim == 3 and
-            arrows.shape[1:] == (2, 2)
+            arrows.ndim == 3
+            and arrows.shape[1:] == (2, 2)
         ):
             raise ValueError(
                 "The `arrows` parameter must be either None or convertible "
@@ -331,9 +330,9 @@ def plot_point_cloud(
             )
     # Validate `arrow_width` parameter
     if not (
-        isinstance(arrow_width, (int, float)) and
-        arrow_width > 0 and
-        arrow_width < float("inf")
+        isinstance(arrow_width, (int, float))
+        and arrow_width > 0
+        and arrow_width < float("inf")
     ):
         raise ValueError(
             "The `arrow_width` parameter must be a finite positive number."
@@ -360,8 +359,7 @@ def plot_point_cloud(
     # Check consistency between `names` and `with_colorbar`
     if min(names is not None, with_colorbar):
         raise ValueError(
-            "The names and the colorbar cannot be displayed "
-            "simultaneously."
+            "The names and the colorbar cannot be displayed simultaneously."
         )
 
     if dimension == 2:
@@ -377,8 +375,8 @@ def plot_point_cloud(
                 "showline": True,
                 "zeroline": True,
                 "showexponent": "all",
-                "exponentformat": "e"
-                },
+                "exponentformat": "e",
+            },
             "yaxis1": {
                 "title": "1st",
                 "side": "left",
@@ -388,55 +386,66 @@ def plot_point_cloud(
                 "showline": True,
                 "zeroline": True,
                 "showexponent": "all",
-                "exponentformat": "e"
-                },
-            "plot_bgcolor": "white"
-            }
+                "exponentformat": "e",
+            },
+            "plot_bgcolor": "white",
+        }
 
         fig = gobj.Figure(layout=layout)
-        fig.update_xaxes(zeroline=True, linewidth=1, linecolor="black",
-                         mirror=False)
-        fig.update_yaxes(zeroline=True, linewidth=1, linecolor="black",
-                         mirror=False)
+        fig.update_xaxes(
+            zeroline=True,
+            linewidth=1,
+            linecolor="black",
+            mirror=False,
+        )
+        fig.update_yaxes(
+            zeroline=True,
+            linewidth=1,
+            linecolor="black",
+            mirror=False,
+        )
 
         if names is None:
             if indicate_outliers:
                 symbols = np.where(labels < 0, "cross", "circle")
             else:
                 symbols = "circle"
-            fig.add_trace(gobj.Scatter(
-                x=point_cloud[:, 0],
-                y=point_cloud[:, 1],
-                mode="markers",
-                showlegend=False,
-                marker={
-                    "size": marker_size,
-                    "symbol": symbols,
-                    "color": labels if indicate_labels else None,
-                    "colorscale": "Viridis",
-                    "opacity": opacity
-                    }
-                ))
+            fig.add_trace(
+                gobj.Scatter(
+                    x=point_cloud[:, 0],
+                    y=point_cloud[:, 1],
+                    mode="markers",
+                    showlegend=False,
+                    marker={
+                        "size": marker_size,
+                        "symbol": symbols,
+                        "color": labels if indicate_labels else None,
+                        "colorscale": "Viridis",
+                        "opacity": opacity,
+                    },
+                )
+            )
         else:
             for label in np.unique(labels):
                 if indicate_outliers:
                     symbol = (lambda x: "cross" if x < 0 else "circle")(label)
                 else:
                     symbol = "circle"
-                fig.add_trace(gobj.Scatter(
-                    x=point_cloud[labels == label][:, 0],
-                    y=point_cloud[labels == label][:, 1],
-                    mode="markers",
-                    name=names[label],
-                    marker={
-                        "size": marker_size,
-                        "symbol": symbol,
-                        "color": label if indicate_labels else None,
-                        "colorscale": "Viridis",
-                        "opacity": opacity
-                    }
-
-                ))
+                fig.add_trace(
+                    gobj.Scatter(
+                        x=point_cloud[labels == label][:, 0],
+                        y=point_cloud[labels == label][:, 1],
+                        mode="markers",
+                        name=names[label],
+                        marker={
+                            "size": marker_size,
+                            "symbol": symbol,
+                            "color": label if indicate_labels else None,
+                            "colorscale": "Viridis",
+                            "opacity": opacity,
+                        },
+                    )
+                )
         if to_scale:
             fig.update_yaxes(scaleanchor="x", scaleratio=1)
 
@@ -446,21 +455,21 @@ def plot_point_cloud(
                 "title": "0th",
                 "type": "linear",
                 "showexponent": "all",
-                "exponentformat": "e"
-                },
+                "exponentformat": "e",
+            },
             "yaxis": {
                 "title": "1st",
                 "type": "linear",
                 "showexponent": "all",
-                "exponentformat": "e"
-                },
+                "exponentformat": "e",
+            },
             "zaxis": {
                 "title": "2nd",
                 "type": "linear",
                 "showexponent": "all",
-                "exponentformat": "e"
-                }
-            }
+                "exponentformat": "e",
+            },
+        }
 
         fig = gobj.Figure()
         fig.update_layout(scene=scene)
@@ -470,20 +479,22 @@ def plot_point_cloud(
                 symbols = np.where(labels < 0, "cross", "circle")
             else:
                 symbols = "circle"
-            fig.add_trace(gobj.Scatter3d(
-                x=point_cloud[:, 0],
-                y=point_cloud[:, 1],
-                z=point_cloud[:, 2],
-                mode="markers",
-                showlegend=False,
-                marker={
-                    "size": marker_size,
-                    "symbol": symbols,
-                    "color": labels if indicate_labels else None,
-                    "colorscale": "Viridis",
-                    "opacity": opacity
-                    }
-                ))
+            fig.add_trace(
+                gobj.Scatter3d(
+                    x=point_cloud[:, 0],
+                    y=point_cloud[:, 1],
+                    z=point_cloud[:, 2],
+                    mode="markers",
+                    showlegend=False,
+                    marker={
+                        "size": marker_size,
+                        "symbol": symbols,
+                        "color": labels if indicate_labels else None,
+                        "colorscale": "Viridis",
+                        "opacity": opacity,
+                    },
+                )
+            )
         else:
             for label in np.unique(labels):
                 if indicate_outliers:
@@ -491,20 +502,22 @@ def plot_point_cloud(
                 else:
                     symbol = "circle"
             for label in np.unique(labels):
-                fig.add_trace(gobj.Scatter3d(
-                    x=point_cloud[labels == label][:, 0],
-                    y=point_cloud[labels == label][:, 1],
-                    z=point_cloud[labels == label][:, 2],
-                    mode="markers",
-                    name=names[label],
-                    marker={
-                        "size": marker_size,
-                        "symbol": symbol,
-                        "color": label if indicate_labels else None,
-                        "colorscale": "Viridis",
-                        "opacity": opacity
-                        }
-                    ))
+                fig.add_trace(
+                    gobj.Scatter3d(
+                        x=point_cloud[labels == label][:, 0],
+                        y=point_cloud[labels == label][:, 1],
+                        z=point_cloud[labels == label][:, 2],
+                        mode="markers",
+                        name=names[label],
+                        marker={
+                            "size": marker_size,
+                            "symbol": symbol,
+                            "color": label if indicate_labels else None,
+                            "colorscale": "Viridis",
+                            "opacity": opacity,
+                        },
+                    )
+                )
         if to_scale:
             fig.update_layout(scene_aspectmode="data")
 
@@ -515,11 +528,9 @@ def plot_point_cloud(
             "y": 0.9,
             "x": 0.5,
             "xanchor": "center",
-            "yanchor": "top"
+            "yanchor": "top",
         }
-        fig.update_layout(
-            title=title_data
-        )
+        fig.update_layout(title=title_data)
 
     # Radius
     if radius is not None:
@@ -533,39 +544,46 @@ def plot_point_cloud(
                 y0=point_cloud[ix][1] - rad,
                 x1=point_cloud[ix][0] + rad,
                 y1=point_cloud[ix][1] + rad,
-                **radius_kwargs
+                **radius_kwargs,
             )
 
     # Lines
     if lines is not None:
         lines = np.array(lines)
         for line in lines:
-            fig.add_trace(gobj.Scatter(
-                x=line[:, 0],
-                y=line[:, 1],
-                mode="lines",
-                line={"width": line_width, "color": "black"},
-                showlegend=False,
-                hoverinfo="none"
-                ))
+            fig.add_trace(
+                gobj.Scatter(
+                    x=line[:, 0],
+                    y=line[:, 1],
+                    mode="lines",
+                    line={"width": line_width, "color": "black"},
+                    showlegend=False,
+                    hoverinfo="none",
+                )
+            )
 
     # Arrows
     if arrows is not None:
         annotations_arrows = []
         arrows = np.array(arrows)
         for arrow in arrows:
-            arrow_data = gobj.layout.Annotation(dict(
-                            x=arrow[1, 0],
-                            y=arrow[1, 1],
-                            xref="x", yref="y",
-                            showarrow=True,
-                            axref="x", ayref="y",
-                            text="",
-                            ax=arrow[0, 0],
-                            ay=arrow[0, 1],
-                            arrowhead=3,
-                            arrowwidth=arrow_width,
-                            arrowcolor="black",))
+            arrow_data = gobj.layout.Annotation(
+                dict(
+                    x=arrow[1, 0],
+                    y=arrow[1, 1],
+                    xref="x",
+                    yref="y",
+                    showarrow=True,
+                    axref="x",
+                    ayref="y",
+                    text="",
+                    ax=arrow[0, 0],
+                    ay=arrow[0, 1],
+                    arrowhead=3,
+                    arrowwidth=arrow_width,
+                    arrowcolor="black",
+                )
+            )
             annotations_arrows.append(arrow_data)
         fig.update_layout(annotations=annotations_arrows)
 
@@ -580,8 +598,8 @@ def plot_point_cloud(
         if not update:
             warnings.warn(
                 '`colorscale` was set to `"wong"`, but the set of `labels` is '
-                'not a set of at most eight consecutive integers; choice of '
-                '`colorscale` is thus ignored.'
+                "not a set of at most eight consecutive integers; choice of "
+                "`colorscale` is thus ignored."
             )
             pass
         else:
@@ -598,9 +616,7 @@ def plot_point_cloud(
                 ),
                 2
             ).tolist()
-            fig.update_traces(
-                marker_colorscale=list(zip(ticks, rgbs))
-            )
+            fig.update_traces(marker_colorscale=list(zip(ticks, rgbs)))
     elif colorscale:
         fig.update_traces(marker_colorscale=colorscale)
     if with_colorbar:
@@ -618,7 +634,7 @@ def cloud_from_fcn_2_dim(
         fcn,
         min=0,
         max=1,
-        steps=25
+        steps=25,
 ):
     """Function generating a 2-dim. point cloud that allows plotting the graph
     of a real-valued function in x. Given a function f(x), where x is a real
@@ -644,27 +660,27 @@ def cloud_from_fcn_2_dim(
             )
     # Validate `min` parameter
     if not (
-        isinstance(min, (int, float)) and
-        min < float("inf") and
-        min > -float("inf")
+        isinstance(min, (int, float))
+        and min < float("inf")
+        and min > -float("inf")
     ):
         raise ValueError(
             "The `min` parameter must be a finite integer or a float."
             )
     # Validate `max` parameter
     if not (
-        isinstance(max, (int, float)) and
-        max < float("inf") and
-        max > -float("inf")
+        isinstance(max, (int, float))
+        and max < float("inf")
+        and max > -float("inf")
     ):
         raise ValueError(
             "The `max` parameter must be a finite integer or a float."
             )
     # Validate `steps` parameter
     if not (
-        isinstance(steps, int) and
-        steps > 0 and
-        steps < float("inf")
+        isinstance(steps, int)
+        and steps > 0
+        and steps < float("inf")
     ):
         raise ValueError(
             "The `steps` parameter must be a finite positive integer."
@@ -681,7 +697,7 @@ def cloud_from_fcn_3_dim(
         fcn,
         mins=[0, 0],
         maxs=[1, 1],
-        steps=[25, 25]
+        steps=[25, 25],
 ):
     """Function generating a 3-dim. point cloud that allows plotting the graph
     of a real-valued function in x and y. Given a function f(x,y), where x and
@@ -719,8 +735,8 @@ def cloud_from_fcn_3_dim(
             f"NumPy-array of floats, However, NumPy says: '{exc}'."
         )
     if not (
-        mins.ndim == 1 and
-        len(mins) == 2
+        mins.ndim == 1
+        and len(mins) == 2
     ):
         raise ValueError(
             "The `min` parameter must contain precisely two values."
@@ -734,8 +750,8 @@ def cloud_from_fcn_3_dim(
             f"NumPy-array of floats, However, NumPy says: '{exc}'."
         )
     if not (
-        maxs.ndim == 1 and
-        len(maxs) == 2
+        maxs.ndim == 1
+        and len(maxs) == 2
     ):
         raise ValueError(
             "The `maxs` parameter must contain precisely two values."
@@ -749,8 +765,8 @@ def cloud_from_fcn_3_dim(
             f"NumPy-array of ints, However, NumPy says: '{exc}'."
         )
     if not (
-        steps.ndim == 1 and
-        len(steps) == 2
+        steps.ndim == 1
+        and len(steps) == 2
     ):
         raise ValueError(
             "The `steps` parameter must contain precisely two values."
