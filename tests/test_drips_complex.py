@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split  # type: ignore
 from drips_complex import DripsComplex  # type: ignore
 
 
-# @pytest.fixture
+@pytest.fixture
 def data_2_dim():
     n, dim = 500, 2
     ratio_vertices = 0.9
