@@ -9,8 +9,8 @@ from sklearn.base import BaseEstimator, TransformerMixin  # type: ignore
 from sklearn.metrics import pairwise_distances  # type: ignore
 from typing_extensions import Self
 
-from plotting.persistence_plotting import plot_persistences  # type: ignore
-from plotting.point_cloud_plotting import plot_point_cloud  # type: ignore
+from .plotting.persistence_plotting import plot_persistences  # type: ignore
+from .plotting.point_cloud_plotting import plot_point_cloud  # type: ignore
 
 
 class DripsComplex(TransformerMixin, BaseEstimator):
@@ -33,7 +33,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
             ``sklearn.metrics.pairwise.PAIRWISE_DISTANCE_FUNCTIONS``.
             Defaults to `"euclidean"`.
         metric_params (dict, optional): Additional parameters to be passed to
-            the distance function. Defaults to None.
+            the distance function. Defaults to `dict()`.
         verbose (bool, optional): Whether or not to display print some progress
             during fitting. Defaults to `False`.
 
@@ -57,15 +57,13 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         max_filtration: float = np.inf,
         coeff: int = 2,
         metric: str = "euclidean",
-        metric_params: Optional[dict] = None,
+        metric_params: dict = dict(),
         verbose: bool = False,
     ) -> None:
         self.max_dimension = max_dimension
         self.coeff = coeff
         self.max_filtration = max_filtration
         self.metric = metric
-        if metric_params is None:
-            metric_params = dict()
         self.metric_params = metric_params
         self.verbose = verbose
 
