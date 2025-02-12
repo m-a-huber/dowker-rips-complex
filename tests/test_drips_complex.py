@@ -153,6 +153,3 @@ def test_drips_complex_octagon(octagon):
     assert (
         drc.persistence_[1] == np.empty(shape=(0, 2)).astype(np.float32)
     ).all()
-
-
-test_drips_complex_plotting_2d(data_2_dim())
