@@ -46,7 +46,7 @@ def get_ripser_input(
     )
 
 
-n, dim = 1000, 512
+n, dim = 5000, 512
 ratio_vertices = 0.9
 X = np.random.randn(n, dim)
 V, W = train_test_split(X, train_size=ratio_vertices)
