@@ -27,13 +27,16 @@ class DripsComplex(TransformerMixin, BaseEstimator):
             filtration parameter. If `np.inf`, the entire filtration is
             computed. Defaults to `np.inf`.
         coeff (int, optional): The field coefficient used in the computation of
-            homoology. Defaults to 2.
+            homoology. Defaults to `2`.
         metric (str, optional): The metric used to compute distance between
             data points. Must be one of the metrics listed in
             ``sklearn.metrics.pairwise.PAIRWISE_DISTANCE_FUNCTIONS``.
             Defaults to `"euclidean"`.
         metric_params (dict, optional): Additional parameters to be passed to
             the distance function. Defaults to `dict()`.
+        collapse_edges (bool, optional): Whether to collapse edges prior to
+            computing persistence in order to speed up that computation. Not
+            recommended unless for very large datasets. Defaults to `False`.
         verbose (bool, optional): Whether or not to display print some progress
             during fitting. Defaults to `False`.
 
@@ -58,13 +61,15 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         coeff: int = 2,
         metric: str = "euclidean",
         metric_params: dict = dict(),
+        collapse_edges: bool = False,
         verbose: bool = False,
     ) -> None:
         self.max_dimension = max_dimension
-        self.coeff = coeff
         self.max_filtration = max_filtration
+        self.coeff = coeff
         self.metric = metric
         self.metric_params = metric_params
+        self.collapse_edges = collapse_edges
         self.verbose = verbose
 
     def vprint(
@@ -89,12 +94,13 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         homology of the associated Dowker-Rips complex.
 
         Args:
-            X: List containing the NumPy-arrays of vertices and witnesses, in
-                this order.
-            y: Not used, present here for API consistency with scikit-learn.
-            swap: Whether or not to potentially swap the roles of vertices and
-                witnesses to compute the less expensive variant of persistent
-                homology. Defaults to `False`.
+            X (list[numpy.ndarray]): List containing the NumPy-arrays of
+                vertices and witnesses, in this order.
+            y (None, optional): Not used, present here for API consistency with
+                scikit-learn.
+            swap (bool, optional): Whether or not to potentially swap the roles
+                of vertices and witnesses to compute the less expensive variant
+                of persistent homology. Defaults to `False`.
             n_threads (int, optional): Maximum number of threads to be used
                 during the computation in homology dimensions 1 and above. `-1`
                 means that the maximum number of threads will be used if
@@ -132,7 +138,8 @@ class DripsComplex(TransformerMixin, BaseEstimator):
             metric="precomputed",
             maxdim=self.max_dimension,
             thresh=self.max_filtration,
-            collapse_edges=True,
+            coeff=self.coeff,
+            collapse_edges=self.collapse_edges,
             n_threads=n_threads,
         )["dgms"]
         self.vprint("Done computing persistent homology.")
