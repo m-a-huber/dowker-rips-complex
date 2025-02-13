@@ -37,6 +37,10 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         collapse_edges (bool, optional): Whether to collapse edges prior to
             computing persistence in order to speed up that computation. Not
             recommended unless for very large datasets. Defaults to `False`.
+        n_threads (int, optional): Maximum number of threads to be used during
+            the computation in homology dimensions 1 and above. `-1` means that
+            the maximum number of threads will be used if possible.
+            Defaults to `1`.
         verbose (bool, optional): Whether or not to display print some progress
             during fitting. Defaults to `False`.
 
@@ -62,6 +66,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         metric: str = "euclidean",
         metric_params: dict = dict(),
         collapse_edges: bool = False,
+        n_threads: int = 1,
         verbose: bool = False,
     ) -> None:
         self.max_dimension = max_dimension
@@ -70,6 +75,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         self.metric = metric
         self.metric_params = metric_params
         self.collapse_edges = collapse_edges
+        self.n_threads = n_threads
         self.verbose = verbose
 
     def vprint(
@@ -87,7 +93,6 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         X: list[npt.NDArray],
         y: Optional[None] = None,
         swap: bool = False,
-        n_threads: int = 1,
     ) -> Self:
         """Method that fits an `DripsComplex`-instance to a pair of point
         clouds consisting of vertices and witnesses and computes the persistent
@@ -101,10 +106,6 @@ class DripsComplex(TransformerMixin, BaseEstimator):
             swap (bool, optional): Whether or not to potentially swap the roles
                 of vertices and witnesses to compute the less expensive variant
                 of persistent homology. Defaults to `False`.
-            n_threads (int, optional): Maximum number of threads to be used
-                during the computation in homology dimensions 1 and above. `-1`
-                means that the maximum number of threads will be used if
-                possible. Defaults to `1`.
 
         Returns:
             :class:`drips_complex.DripsComplex`: Fitted instance of
@@ -140,7 +141,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
             thresh=self.max_filtration,
             coeff=self.coeff,
             collapse_edges=self.collapse_edges,
-            n_threads=n_threads,
+            n_threads=self.n_threads,
         )["dgms"]
         self.vprint("Done computing persistent homology.")
         return self.persistence_
