@@ -7,7 +7,6 @@ from gph import ripser_parallel  # type: ignore
 from numba import jit, prange  # type: ignore
 from sklearn.base import BaseEstimator, TransformerMixin  # type: ignore
 from sklearn.metrics import pairwise_distances  # type: ignore
-from typing_extensions import Self
 
 from .plotting.persistence_plotting import plot_persistences  # type: ignore
 from .plotting.point_cloud_plotting import plot_point_cloud  # type: ignore
@@ -93,9 +92,9 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         X: list[npt.NDArray],
         y: Optional[None] = None,
         swap: bool = False,
-    ) -> Self:
-        """Method that fits an `DripsComplex`-instance to a pair of point
-        clouds consisting of vertices and witnesses and computes the persistent
+    ) -> list[npt.NDArray]:
+        """Method that fits a `DripsComplex`-instance to a pair of point clouds
+        consisting of vertices and witnesses and computes the persistent
         homology of the associated Dowker-Rips complex.
 
         Args:
@@ -108,8 +107,13 @@ class DripsComplex(TransformerMixin, BaseEstimator):
                 of persistent homology. Defaults to `False`.
 
         Returns:
-            :class:`drips_complex.DripsComplex`: Fitted instance of
-                `DripsComplex`.
+            list[numpy.ndarray]: The persistent homology computed from the
+                Drips simplicial complex. The format of this data is a list of
+                NumPy-arrays of shape `(n_generators, 2)`, where the i-th entry
+                of the list is an array containing the birth and death times of
+                the homological generators in dimension i-1. In particular, the
+                list starts with 0-dimensional homology and contains
+                information from consecutive homological dimensions.
         """
         vertices, witnesses = X
         if vertices.shape[1] != witnesses.shape[1]:
