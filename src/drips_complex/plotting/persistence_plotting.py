@@ -89,7 +89,7 @@ def plot_persistences(
             "The `persistences` parameter must be a list."
         )
     if not all(
-        isinstance(persistences, list)
+        isinstance(persistence, list)
         for persistence in persistences
     ):
         raise ValueError(
