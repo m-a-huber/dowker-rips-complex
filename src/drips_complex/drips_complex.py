@@ -128,6 +128,10 @@ class DripsComplex(TransformerMixin, BaseEstimator):
             self.vprint("Swapped roles of vertices and witnesses.")
         self.vertices_ = vertices
         self.witnesses_ = witnesses
+        self.vprint(
+            "Complex has (n_vertices, n_witnesses) = "
+            f"{(len(self.vertices_), len(self.witnesses_))}."
+        )
         self._labels_vertices_ = np.zeros(len(self.vertices_))
         self._labels_witnesses_ = -np.ones(len(self.witnesses_))
         self._points_ = np.concatenate([self.vertices_, self.witnesses_])
@@ -136,7 +140,10 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         )
         self.vprint("Getting ripser input...")
         self._ripser_input_ = self._get_ripser_input()
-        self.vprint("Done getting ripser input.")
+        self.vprint(
+            "Done getting ripser input, has shape "
+            f"{self._ripser_input_.shape}."
+        )
         self.vprint("Computing persistent homology...")
         self.persistence_ = ripser_parallel(
             X=self._ripser_input_,
