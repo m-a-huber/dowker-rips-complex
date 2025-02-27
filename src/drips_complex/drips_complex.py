@@ -94,7 +94,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         swap: bool = False,
     ) -> list[npt.NDArray]:
         """Method that fits a `DripsComplex`-instance to a pair of point clouds
-        consisting of vertices and witnesses and computes the persistent
+        consisting of vertices and witnesses by computing the persistent
         homology of the associated Dowker-Rips complex.
 
         Args:
@@ -233,7 +233,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
             :class:`plotly.graph_objs._figure.Figure`: A plot of the
                 vertex and witness point clouds.
         """
-        if not hasattr(self, "persistence_"):
+        if not hasattr(self, "vertices_") and hasattr(self, "witnesses_"):
             raise AttributeError(
                 "This instance does not have the attributes `vertices_` and "
                 "`witnesses_`. Run `fit_transform` before plotting."
