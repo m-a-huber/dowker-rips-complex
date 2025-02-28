@@ -13,10 +13,10 @@ from .plotting.point_cloud_plotting import plot_point_cloud  # type: ignore
 
 
 class DripsComplex(TransformerMixin, BaseEstimator):
-    """Class implementing the Dowker-Rips complex associated to a point cloud
-    whose elements are separated into two classes. The data points on which the
-    simplicial complex is constructed are referred to as "vertices", while the
-    other ones are referred to as "witnesses".
+    """Class implementing the Dowker-Rips persistent homology associated to a
+    point cloud whose elements are separated into two classes. The data points
+    on which the underlying simplicial complex is constructed are referred to
+    as "vertices", while the other ones are referred to as "witnesses".
 
     Parameters:
         max_dimension (int, optional): The maximum homology dimension computed.
@@ -40,8 +40,11 @@ class DripsComplex(TransformerMixin, BaseEstimator):
             the computation in homology dimensions 1 and above. `-1` means that
             the maximum number of threads will be used if possible.
             Defaults to `1`.
-        verbose (bool, optional): Whether or not to display print some progress
-            during fitting. Defaults to `False`.
+        swap (bool, optional): Whether or not to potentially swap the roles of
+            vertices and witnesses to compute the less expensive variant of
+            persistent homology. Defaults to `False`.
+        verbose (bool, optional): Whether or not to display information such as
+            computation progress. Defaults to `False`.
 
     Attributes:
         vertices_ (numpy.ndarray of shape (n_vertices, dim)): NumPy-array
@@ -66,6 +69,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         metric_params: dict = dict(),
         collapse_edges: bool = False,
         n_threads: int = 1,
+        swap: bool = False,
         verbose: bool = False,
     ) -> None:
         self.max_dimension = max_dimension
@@ -75,6 +79,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         self.metric_params = metric_params
         self.collapse_edges = collapse_edges
         self.n_threads = n_threads
+        self.swap = swap
         self.verbose = verbose
 
     def vprint(
@@ -91,7 +96,6 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         self,
         X: list[npt.NDArray],
         y: Optional[None] = None,
-        swap: bool = False,
     ) -> list[npt.NDArray]:
         """Method that fits a `DripsComplex`-instance to a pair of point clouds
         consisting of vertices and witnesses by computing the persistent
@@ -102,9 +106,6 @@ class DripsComplex(TransformerMixin, BaseEstimator):
                 vertices and witnesses, in this order.
             y (None, optional): Not used, present here for API consistency with
                 scikit-learn.
-            swap (bool, optional): Whether or not to potentially swap the roles
-                of vertices and witnesses to compute the less expensive variant
-                of persistent homology. Defaults to `False`.
 
         Returns:
             list[numpy.ndarray]: The persistent homology computed from the
@@ -122,8 +123,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
                 f"dimensionality; received dim(vertices)={vertices.shape[1]} "
                 f"and dim(witnesses)={witnesses.shape[1]}."
             )
-        self.swap_ = swap
-        if self.swap_ and len(vertices) > len(witnesses):
+        if self.swap and len(vertices) > len(witnesses):
             vertices, witnesses = witnesses, vertices
             self.vprint("Swapped roles of vertices and witnesses.")
         self.vertices_ = vertices
@@ -194,8 +194,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
                 such as `marker_size`.
 
         Returns:
-            :class:`plotly.graph_objs._figure.Figure`: A plot of the
-                persistence diagram.
+            `plotly.graph_objs.Figure`: A plot of the persistence diagram.
         """
         if not hasattr(self, "persistence_"):
             raise AttributeError(
@@ -230,8 +229,8 @@ class DripsComplex(TransformerMixin, BaseEstimator):
                 as `marker_size` and `colorscale`.
 
         Returns:
-            :class:`plotly.graph_objs._figure.Figure`: A plot of the
-                vertex and witness point clouds.
+            `plotly.graph_objs.Figure`: A plot of the vertex and witness point
+                clouds.
         """
         if not hasattr(self, "vertices_") and hasattr(self, "witnesses_"):
             raise AttributeError(
