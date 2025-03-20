@@ -65,6 +65,48 @@ def test_drips_complex(random_data):
     assert hasattr(drc, "persistence_")
 
 
+def test_drips_complex_empty_vertices():
+    """
+    Check whether `DripsComplex` runs for empty set of vertices.
+    """
+    X, y = [np.random.randn(0, 512), np.random.randn(10, 512)], None
+    drc = DripsComplex()
+    drc.fit_transform(X, y)
+    assert hasattr(drc, "persistence_")
+    assert len(drc.persistence_) == 2
+    assert (
+        drc.persistence_[0] == np.empty(
+            (0, 2)
+        )
+    ).all()
+    assert (
+        drc.persistence_[1] == np.empty(
+            (0, 2)
+        )
+    ).all()
+
+
+def test_drips_complex_empty_witnesses():
+    """
+    Check whether `DripsComplex` runs for empty set of witnesses.
+    """
+    X, y = [np.random.randn(10, 512), np.random.randn(0, 512)], None
+    drc = DripsComplex()
+    drc.fit_transform(X, y)
+    assert hasattr(drc, "persistence_")
+    assert len(drc.persistence_) == 2
+    assert (
+        drc.persistence_[0] == np.empty(
+            (0, 2)
+        )
+    ).all()
+    assert (
+        drc.persistence_[1] == np.empty(
+            (0, 2)
+        )
+    ).all()
+
+
 def test_drips_complex_plotting_2d(random_data):
     """
     Check whether `DripsComplex` plots 2D data.

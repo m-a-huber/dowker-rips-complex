@@ -138,23 +138,30 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         self._labels_ = np.concatenate(
             [self._labels_vertices_, self._labels_witnesses_]
         )
-        self.vprint("Getting ripser input...")
-        self._ripser_input_ = self._get_ripser_input()
-        self.vprint(
-            "Done getting ripser input, has shape "
-            f"{self._ripser_input_.shape}."
-        )
-        self.vprint("Computing persistent homology...")
-        self.persistence_ = ripser_parallel(
-            X=self._ripser_input_,
-            metric="precomputed",
-            maxdim=self.max_dimension,
-            thresh=self.max_filtration,
-            coeff=self.coeff,
-            collapse_edges=self.collapse_edges,
-            n_threads=self.n_threads,
-        )["dgms"]
-        self.vprint("Done computing persistent homology.")
+        if min(len(self.vertices_), len(self.witnesses_)) == 0:
+            self._ripser_input_ = np.empty((0, 0))
+            self.persistence_ = [
+                np.empty((0, 2), dtype=np.float32)
+                for _ in range(self.max_dimension + 1)
+            ]
+        else:
+            self.vprint("Getting ripser input...")
+            self._ripser_input_ = self._get_ripser_input()
+            self.vprint(
+                "Done getting ripser input, has shape "
+                f"{self._ripser_input_.shape}."
+            )
+            self.vprint("Computing persistent homology...")
+            self.persistence_ = ripser_parallel(
+                X=self._ripser_input_,
+                metric="precomputed",
+                maxdim=self.max_dimension,
+                thresh=self.max_filtration,
+                coeff=self.coeff,
+                collapse_edges=self.collapse_edges,
+                n_threads=self.n_threads,
+            )["dgms"]
+            self.vprint("Done computing persistent homology.")
         return self.persistence_
 
     def _get_ripser_input(
@@ -163,7 +170,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         @jit(nopython=True, parallel=True)
         def _ripser_input_numba(dm):
             n = dm.shape[0]
-            ripser_input = np.empty((n, n), dtype=np.float32)
+            ripser_input = np.empty((n, n))
             for i in prange(n):
                 for j in range(i, n):
                     dist = np.min(np.maximum(dm[i], dm[j]))
