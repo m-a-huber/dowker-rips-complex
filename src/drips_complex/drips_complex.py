@@ -88,8 +88,6 @@ class DripsComplex(TransformerMixin, BaseEstimator):
     ) -> None:
         if self.verbose:
             print(s)
-        else:
-            pass
         return
 
     def fit_transform(
@@ -178,13 +176,14 @@ class DripsComplex(TransformerMixin, BaseEstimator):
                     ripser_input[j, i] = dist
             return ripser_input
 
+        self._dm_ = pairwise_distances(
+            X=self.vertices_,
+            Y=self.witnesses_,
+            metric=self.metric,
+            **self.metric_params,
+        )
         return _ripser_input_numba(
-            pairwise_distances(
-                X=self.vertices_,
-                Y=self.witnesses_,
-                metric=self.metric,
-                **self.metric_params,
-            )
+            self._dm_
         )
 
     def plot_persistence(
