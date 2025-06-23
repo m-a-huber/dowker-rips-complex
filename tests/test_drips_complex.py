@@ -4,12 +4,13 @@ from sklearn.model_selection import train_test_split  # type: ignore
 
 from drips_complex import DripsComplex  # type: ignore
 
+rng = np.random.default_rng()
+
 
 @pytest.fixture
 def random_data():
     n, dim = 500, 512
     ratio_vertices = 0.9
-    rng = np.random.default_rng()
     X, y = (
         list(train_test_split(
             rng.standard_normal(size=(n, dim)), train_size=ratio_vertices)
@@ -70,7 +71,6 @@ def test_drips_complex_empty_vertices():
     """
     Check whether `DripsComplex` runs for empty set of vertices.
     """
-    rng = np.random.default_rng()
     X, y = (
         [
             rng.standard_normal(size=(0, 512)),
@@ -98,7 +98,6 @@ def test_drips_complex_empty_witnesses():
     """
     Check whether `DripsComplex` runs for empty set of witnesses.
     """
-    rng = np.random.default_rng()
     X, y = (
         [
             rng.standard_normal(size=(10, 512)),
