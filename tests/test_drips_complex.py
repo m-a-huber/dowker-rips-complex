@@ -2,7 +2,7 @@ import numpy as np
 import pytest  # type: ignore
 from sklearn.model_selection import train_test_split  # type: ignore
 
-from drips_complex import DripsComplex  # type: ignore
+from dowker_rips_complex import DowkerRipsComplex  # type: ignore
 
 rng = np.random.default_rng()
 
@@ -57,19 +57,19 @@ def octagon():
     return X, y
 
 
-def test_drips_complex(random_data):
+def test_dowker_rips_complex(random_data):
     """
-    Check whether `DripsComplex` runs at all and plots.
+    Check whether `DowkerRipsComplex` runs at all and plots.
     """
     X, y = random_data
-    drc = DripsComplex()
+    drc = DowkerRipsComplex()
     drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
 
 
-def test_drips_complex_empty_vertices():
+def test_dowker_rips_complex_empty_vertices():
     """
-    Check whether `DripsComplex` runs for empty set of vertices.
+    Check whether `DowkerRipsComplex` runs for empty set of vertices.
     """
     X, y = (
         [
@@ -78,7 +78,7 @@ def test_drips_complex_empty_vertices():
         ],
         None,
     )
-    drc = DripsComplex()
+    drc = DowkerRipsComplex()
     drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
     assert len(drc.persistence_) == 2
@@ -94,9 +94,9 @@ def test_drips_complex_empty_vertices():
     ).all()
 
 
-def test_drips_complex_empty_witnesses():
+def test_dowker_rips_complex_empty_witnesses():
     """
-    Check whether `DripsComplex` runs for empty set of witnesses.
+    Check whether `DowkerRipsComplex` runs for empty set of witnesses.
     """
     X, y = (
         [
@@ -105,7 +105,7 @@ def test_drips_complex_empty_witnesses():
         ],
         None,
     )
-    drc = DripsComplex()
+    drc = DowkerRipsComplex()
     drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
     assert len(drc.persistence_) == 2
@@ -121,37 +121,38 @@ def test_drips_complex_empty_witnesses():
     ).all()
 
 
-def test_drips_complex_plotting_2d(random_data):
+def test_dowker_rips_complex_plotting_2d(random_data):
     """
-    Check whether `DripsComplex` plots 2D data.
+    Check whether `DowkerRipsComplex` plots 2D data.
     """
     X, y = random_data
     X = [pt_cloud[:, :2] for pt_cloud in X]
-    drc = DripsComplex()
+    drc = DowkerRipsComplex()
     drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
     drc.plot_points()
     drc.plot_persistence()
 
 
-def test_drips_complex_plotting_3d(random_data):
+def test_dowker_rips_complex_plotting_3d(random_data):
     """
-    Check whether `DripsComplex` plots 3D data.
+    Check whether `DowkerRipsComplex` plots 3D data.
     """
     X, y = random_data
     X = [pt_cloud[:, :3] for pt_cloud in X]
-    drc = DripsComplex()
+    drc = DowkerRipsComplex()
     drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
     drc.plot_points()
     drc.plot_persistence()
 
 
-def test_drips_complex_quadrilateral(quadrilateral):
+def test_dowker_rips_complex_quadrilateral(quadrilateral):
     """
-    Check whether `DripsComplex` returns correct result on small quadrilateral.
+    Check whether `DowkerRipsComplex` returns correct result on small
+    quadrilateral.
     """
-    drc = DripsComplex()
+    drc = DowkerRipsComplex()
     drc.fit_transform(*quadrilateral)
     assert hasattr(drc, "persistence_")
     assert len(drc.persistence_) == 2
@@ -169,11 +170,12 @@ def test_drips_complex_quadrilateral(quadrilateral):
     ).all()
 
 
-def test_drips_complex_octagon(octagon):
+def test_dowker_rips_complex_octagon(octagon):
     """
-    Check whether `DripsComplex` returns correct result on regular octagon.
+    Check whether `DowkerRipsComplex` returns correct result on regular
+    octagon.
     """
-    drc = DripsComplex()
+    drc = DowkerRipsComplex()
     drc.fit_transform(*octagon)
     assert hasattr(drc, "persistence_")
     assert len(drc.persistence_) == 2

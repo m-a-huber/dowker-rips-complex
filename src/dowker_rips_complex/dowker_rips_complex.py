@@ -12,7 +12,7 @@ from .plotting.persistence_plotting import plot_persistences  # type: ignore
 from .plotting.point_cloud_plotting import plot_point_cloud  # type: ignore
 
 
-class DripsComplex(TransformerMixin, BaseEstimator):
+class DowkerRipsComplex(TransformerMixin, BaseEstimator):
     """Class implementing the Dowker-Rips persistent homology associated to a
     point cloud whose elements are separated into two classes. The data points
     on which the underlying simplicial complex is constructed are referred to
@@ -22,7 +22,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         max_dimension (int, optional): The maximum homology dimension computed.
             Will compute all dimensions lower than or equal to this value.
             Defaults to `1`.
-        max_filtration (float, optional): The Maximum value of the Drips
+        max_filtration (float, optional): The Maximum value of the Dowker-Rips
             filtration parameter. If `np.inf`, the entire filtration is
             computed. Defaults to `np.inf`.
         coeff (int, optional): The field coefficient used in the computation of
@@ -52,8 +52,8 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         witnesses_ (numpy.ndarray of shape (n_witnesses, dim)): NumPy-array
             containing the witnesses.
         persistence_ (list[numpy.ndarray]): The persistent homology computed
-            from the Drips simplicial complex. The format of this data is a
-            list of NumPy-arrays of shape `(n_generators, 2)`, where the i-th
+            from the Dowker-Rips simplicial complex. The format of this data is
+            a list of NumPy-arrays of shape `(n_generators, 2)`, where the i-th
             entry of the list is an array containing the birth and death times
             of the homological generators in dimension i-1. In particular, the
             list starts with 0-dimensional homology and contains information
@@ -95,8 +95,8 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         X: list[npt.NDArray],
         y: Optional[None] = None,
     ) -> list[npt.NDArray]:
-        """Method that fits a `DripsComplex`-instance to a pair of point clouds
-        consisting of vertices and witnesses by computing the persistent
+        """Method that fits a `DowkerRipsComplex`-instance to a pair of point
+        clouds consisting of vertices and witnesses by computing the persistent
         homology of the associated Dowker-Rips complex.
 
         Args:
@@ -107,12 +107,12 @@ class DripsComplex(TransformerMixin, BaseEstimator):
 
         Returns:
             list[numpy.ndarray]: The persistent homology computed from the
-                Drips simplicial complex. The format of this data is a list of
-                NumPy-arrays of shape `(n_generators, 2)`, where the i-th entry
-                of the list is an array containing the birth and death times of
-                the homological generators in dimension i-1. In particular, the
-                list starts with 0-dimensional homology and contains
-                information from consecutive homological dimensions.
+                Dowker-Rips simplicial complex. The format of this data is a
+                list of NumPy-arrays of shape `(n_generators, 2)`, where the
+                i-th entry of the list is an array containing the birth and
+                death times of the homological generators in dimension i-1. In
+                particular, the list starts with 0-dimensional homology and
+                contains information from consecutive homological dimensions.
         """
         vertices, witnesses = X
         if vertices.shape[1] != witnesses.shape[1]:
@@ -191,7 +191,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         **plotting_kwargs,
     ) -> gobj.Figure:
         """Method plotting the persistent homology of a Dowker-Rips complex.
-        Underlying instance of `DripsComplex` must be fitted and have the
+        Underlying instance of `DowkerRipsComplex` must be fitted and have the
         attribute `persistence_`.
 
         Args:
@@ -220,7 +220,7 @@ class DripsComplex(TransformerMixin, BaseEstimator):
         **plotting_kwargs,
     ) -> gobj.Figure:
         """Method plotting the vertices and witnesses of a Dowker-Rips complex.
-        Underlying instance of `DripsComplex` must be fitted and have the
+        Underlying instance of `DowkerRipsComplex` must be fitted and have the
         attributes `vertices_` and `witnesses_`. Works for point clouds up to
         dimension three only.
 

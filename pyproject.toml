@@ -1,10 +1,10 @@
 [project]
-name = "drips-complex"
+name = "dowker-rips-complex"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
-    { name = "m-a-huber", email = "hubermarius@hotmail.com" }
+    { name = "m-a-huber" }
 ]
 requires-python = ">=3.10"
 dependencies = [
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-drips-complex = "drips_complex:main"
+dowker-rips-complex = "dowker_rips_complex:main"
 
 [build-system]
 requires = ["setuptools>=61"]
