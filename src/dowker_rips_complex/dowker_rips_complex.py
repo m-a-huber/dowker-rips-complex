@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional
 
 import numpy as np
@@ -29,6 +30,12 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             Defaults to `"euclidean"`.
         metric_params (dict, optional): Additional parameters to be passed to
             the distance function. Defaults to `dict()`.
+        use_numpy (bool, optional): Whether or not to use NumPy instead of
+            Numba to compute the input to `ripser_parallel` from the matrix of
+            pairwise distances. The Numba implementation does not suffer from
+            OOM errors, and will be fallen back to if `use_numpy` is set to
+            `True` and the NumPy implementation results in such an error.
+            Defaults to `False`.
         collapse_edges (bool, optional): Whether to collapse edges prior to
             computing persistence in order to speed up that computation. Not
             recommended unless for very large datasets. Defaults to `False`.
@@ -38,7 +45,8 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             Defaults to `1`.
         swap (bool, optional): Whether or not to potentially swap the roles of
             vertices and witnesses to compute the less expensive variant of
-            persistent homology. Defaults to `False`.
+            persistent homology. Note that this may affect the resulting
+            persistence in dimensions two and higher. Defaults to `True`.
         verbose (bool, optional): Whether or not to display information such as
             computation progress. Defaults to `False`.
 
@@ -63,9 +71,10 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         coeff: int = 2,
         metric: str = "euclidean",
         metric_params: dict = dict(),
+        use_numpy: bool = False,
         collapse_edges: bool = False,
         n_threads: int = 1,
-        swap: bool = False,
+        swap: bool = True,
         verbose: bool = False,
     ) -> None:
         self.max_dimension = max_dimension
@@ -73,6 +82,7 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         self.coeff = coeff
         self.metric = metric
         self.metric_params = metric_params
+        self.use_numpy = use_numpy
         self.collapse_edges = collapse_edges
         self.n_threads = n_threads
         self.swap = swap
@@ -161,6 +171,28 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
     def _get_ripser_input(
         self,
     ):
+        self._dm_ = pairwise_distances(
+            X=self.vertices_,
+            Y=self.witnesses_,
+            metric=self.metric,
+            **self.metric_params,
+        )
+        if self.use_numpy:
+            try:
+                return np.min(
+                    np.maximum(
+                        self._dm_.T[:, :, None],
+                        self._dm_[None, :, :]
+                    ),
+                    axis=1,
+                )
+            except MemoryError:
+                warnings.warn(
+                    "NumPy implementation ran out of memory; "
+                    "falling back to Numba.",
+                    RuntimeWarning
+                )
+
         @jit(nopython=True, parallel=True)
         def _ripser_input_numba(dm):
             n = dm.shape[0]
@@ -171,13 +203,6 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
                     ripser_input[i, j] = dist
                     ripser_input[j, i] = dist
             return ripser_input
-
-        self._dm_ = pairwise_distances(
-            X=self.vertices_,
-            Y=self.witnesses_,
-            metric=self.metric,
-            **self.metric_params,
-        )
         return _ripser_input_numba(
             self._dm_
         )
