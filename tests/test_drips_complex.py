@@ -121,32 +121,6 @@ def test_dowker_rips_complex_empty_witnesses():
     ).all()
 
 
-def test_dowker_rips_complex_plotting_2d(random_data):
-    """
-    Check whether `DowkerRipsComplex` plots 2D data.
-    """
-    X, y = random_data
-    X = [pt_cloud[:, :2] for pt_cloud in X]
-    drc = DowkerRipsComplex()
-    drc.fit_transform(X, y)
-    assert hasattr(drc, "persistence_")
-    drc.plot_points()
-    drc.plot_persistence()
-
-
-def test_dowker_rips_complex_plotting_3d(random_data):
-    """
-    Check whether `DowkerRipsComplex` plots 3D data.
-    """
-    X, y = random_data
-    X = [pt_cloud[:, :3] for pt_cloud in X]
-    drc = DowkerRipsComplex()
-    drc.fit_transform(X, y)
-    assert hasattr(drc, "persistence_")
-    drc.plot_points()
-    drc.plot_persistence()
-
-
 def test_dowker_rips_complex_quadrilateral(quadrilateral):
     """
     Check whether `DowkerRipsComplex` returns correct result on small

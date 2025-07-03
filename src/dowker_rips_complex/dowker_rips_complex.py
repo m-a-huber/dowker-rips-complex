@@ -2,14 +2,10 @@ from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
-import plotly.graph_objects as gobj  # type: ignore
 from gph import ripser_parallel  # type: ignore
 from numba import jit, prange  # type: ignore
 from sklearn.base import BaseEstimator, TransformerMixin  # type: ignore
 from sklearn.metrics import pairwise_distances  # type: ignore
-
-from .plotting.persistence_plotting import plot_persistences  # type: ignore
-from .plotting.point_cloud_plotting import plot_point_cloud  # type: ignore
 
 
 class DowkerRipsComplex(TransformerMixin, BaseEstimator):
@@ -184,75 +180,4 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         )
         return _ripser_input_numba(
             self._dm_
-        )
-
-    def plot_persistence(
-        self,
-        **plotting_kwargs,
-    ) -> gobj.Figure:
-        """Method plotting the persistent homology of a Dowker-Rips complex.
-        Underlying instance of `DowkerRipsComplex` must be fitted and have the
-        attribute `persistence_`.
-
-        Args:
-            plotting_kwargs (optional): Keyword arguments passed to the
-                function `plotting.persistence_plotting.plot_persistences`,
-                such as `marker_size`.
-
-        Returns:
-            `plotly.graph_objs.Figure`: A plot of the persistence diagram.
-        """
-        if not hasattr(self, "persistence_"):
-            raise AttributeError(
-                "This instance does not have the attribute `persistence_`. "
-                "Run `fit_transform` before plotting."
-            )
-        fig = plot_persistences(
-            [self.persistence_],
-            **plotting_kwargs,
-        )
-        return fig
-
-    def plot_points(
-        self,
-        indicate_witnesses: bool = True,
-        use_colors: bool = True,
-        **plotting_kwargs,
-    ) -> gobj.Figure:
-        """Method plotting the vertices and witnesses of a Dowker-Rips complex.
-        Underlying instance of `DowkerRipsComplex` must be fitted and have the
-        attributes `vertices_` and `witnesses_`. Works for point clouds up to
-        dimension three only.
-
-        Args:
-            indicate_witnesses (bool, optional): Whether or not to indicate the
-                witness points by a cross as opposed to a dot.
-                Defaults to `True`.
-            use_colors (bool, optional): Whether or not to color the vertices
-                and witnesses in different colors. Defaults to `True`.
-            plotting_kwargs (optional): Keyword arguments passed to the
-                function `plotting.point_cloud_plotting.plot_point_cloud`, such
-                as `marker_size` and `colorscale`.
-
-        Returns:
-            `plotly.graph_objs.Figure`: A plot of the vertex and witness point
-                clouds.
-        """
-        if not hasattr(self, "vertices_") and hasattr(self, "witnesses_"):
-            raise AttributeError(
-                "This instance does not have the attributes `vertices_` and "
-                "`witnesses_`. Run `fit_transform` before plotting."
-            )
-        if self._points_.shape[1] not in {1, 2, 3}:
-            raise Exception(
-                "Plotting is supported only for data "
-                "sets of dimension at most 3."
-            )
-        return plot_point_cloud(
-            self._points_,
-            labels=self._labels_,
-            indicate_outliers=indicate_witnesses,
-            indicate_labels=use_colors,
-            colorscale="wong",
-            **plotting_kwargs,
         )
