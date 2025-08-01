@@ -57,11 +57,12 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             containing the witnesses.
         persistence_ (list[numpy.ndarray]): The persistent homology computed
             from the Dowker-Rips simplicial complex. The format of this data is
-            a list of NumPy-arrays of shape `(n_generators, 2)`, where the i-th
-            entry of the list is an array containing the birth and death times
-            of the homological generators in dimension i-1. In particular, the
-            list starts with 0-dimensional homology and contains information
-            from consecutive homological dimensions.
+            a list of NumPy-arrays of dtype float32 and of shape
+            `(n_generators, 2)`, where the i-th entry of the list is an array
+            containing the birth and death times of the homological generators
+            in dimension i-1. In particular, the list starts with 0-dimensional
+            homology and contains information from consecutive homological
+            dimensions.
     """
 
     def __init__(
@@ -100,7 +101,7 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         self,
         X: list[npt.NDArray],
         y: Optional[None] = None,
-    ) -> list[npt.NDArray]:
+    ) -> list[npt.NDArray[np.float32]]:
         """Method that fits a `DowkerRipsComplex`-instance to a pair of point
         clouds consisting of vertices and witnesses by computing the persistent
         homology of the associated Dowker-Rips complex.
@@ -114,11 +115,12 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         Returns:
             list[numpy.ndarray]: The persistent homology computed from the
                 Dowker-Rips simplicial complex. The format of this data is a
-                list of NumPy-arrays of shape `(n_generators, 2)`, where the
-                i-th entry of the list is an array containing the birth and
-                death times of the homological generators in dimension i-1. In
-                particular, the list starts with 0-dimensional homology and
-                contains information from consecutive homological dimensions.
+                list of NumPy-arrays of dtype float32 and of shape
+                `(n_generators, 2)`, where the i-th entry of the list is an
+                array containing the birth and death times of the homological
+                generators in dimension i-1. In particular, the list starts
+                with 0-dimensional homology and contains information from
+                consecutive homological dimensions.
         """
         vertices, witnesses = X
         if vertices.shape[1] != witnesses.shape[1]:
