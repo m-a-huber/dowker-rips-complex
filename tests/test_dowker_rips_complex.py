@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split  # type: ignore
 
 from dowker_rips_complex import DowkerRipsComplex  # type: ignore
 
-rng = np.random.default_rng()
+rng = np.random.default_rng(42)
 
 
 @pytest.fixture
@@ -59,17 +59,31 @@ def octagon():
 
 def test_dowker_rips_complex(random_data):
     """
-    Check whether `DowkerRipsComplex` runs at all and plots.
+    Check whether `DowkerRipsComplex` runs at all for `max_dimension` up to and
+    including `1`.
     """
     X, y = random_data
-    drc = DowkerRipsComplex()
+    for max_dimension in [0, 1]:
+        drc = DowkerRipsComplex(max_dimension=max_dimension)
+        drc.fit_transform(X, y)
+        assert hasattr(drc, "persistence_")
+
+
+def test_dowker_rips_complex_cosine(random_data):
+    """
+    Check whether `DowkerRipsComplex` runs on random data with non-default
+    metric.
+    """
+    X, y = random_data
+    drc = DowkerRipsComplex(metric="cosine")
     drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
 
 
 def test_dowker_rips_complex_empty_vertices():
     """
-    Check whether `DowkerRipsComplex` runs for empty set of vertices.
+    Check whether `DowkerRipsComplex` runs for empty set of vertices and yields
+    correct result.
     """
     X, y = (
         [
@@ -106,6 +120,34 @@ def test_dowker_rips_complex_empty_witnesses():
         None,
     )
     drc = DowkerRipsComplex()
+    drc.fit_transform(X, y)
+    assert hasattr(drc, "persistence_")
+    assert len(drc.persistence_) == 2
+    assert (
+        drc.persistence_[0] == np.empty(
+            (0, 2)
+        )
+    ).all()
+    assert (
+        drc.persistence_[1] == np.empty(
+            (0, 2)
+        )
+    ).all()
+
+
+def test_dowker_rips_complex_empty_witnesses_no_swap():
+    """
+    Check whether `DowkerRipsComplex` runs for empty set of witnesses with
+    `swap=False`.
+    """
+    X, y = (
+        [
+            rng.standard_normal(size=(10, 512)),
+            rng.standard_normal(size=(0, 512)),
+        ],
+        None,
+    )
+    drc = DowkerRipsComplex(swap=False)
     drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
     assert len(drc.persistence_) == 2
