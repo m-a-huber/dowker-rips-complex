@@ -52,7 +52,7 @@ The environment specified in `uv.lock` can be recreated by running `uv sync`.
 
 ---
 
-__Example of installing AuToMATo from source for `uv` users__
+__Example of installing `dowker-rips-complex` from source for `uv` users__
 
 ```
 $ git clone github.com/m-a-huber/dowker-rips-complex
