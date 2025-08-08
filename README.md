@@ -1,0 +1,65 @@
+Implementation of the Dowker-Rips complex introduced in [<em>Ripsifying the Dowker Complex</em>](TODO).
+The complex is implemented as a class named `DowkerRipsComplex` that largely follows the API conventions from `scikit-learn`.
+
+---
+
+__Example of running DowkerRipsComplex__
+
+```
+>>> from dowker_rips_complex import DowkerRipsComplex
+>>> from sklearn.datasets import make_blobs
+>>> X, y = make_blobs(
+        n_samples=200,
+        centers=[[-1, 0], [1, 0]],
+        cluster_std=0.75,
+        random_state=42,
+    )
+>>> vertices, witnesses = X[y == 0], X[y == 1]
+>>> drc = DowkerRipsComplex()  # use default parameters
+>>> persistence = drc.fit_transform([vertices, witnesses])
+>>> persistence
+    [array([[0.07438909, 0.1733489 ],
+            [0.08154549, 0.24042536],
+            [0.17218398, 0.24239226],
+            [0.13146845, 0.25247845],
+            [0.16269606, 0.2926637 ],
+            [0.10576964, 0.32222554],
+            [0.1382231 , 0.358332  ],
+            [0.07358199, 0.3740825 ],
+            [0.39632082, 0.4189592 ],
+            [0.24082384, 0.577262  ],
+            [0.02419385,        inf]], dtype=float32),
+    array([[0.5035793 , 0.55263996]], dtype=float32)]
+```
+
+Any `DowkerRipsComplex` object accepts further parameters during instantiation.
+A full description of these can be displayed by calling `help(DowkerRipsComplex)`.
+These parameters, among other things, allow the user to specify persistence-related parameters such as the maximal homological dimension to compute or which metric to use.
+
+Behind the scenes, `DowkerRipsComplex` computes the input matrix required for Ripser from a matrix of pairwise distances between vertices and witnesses.
+This process is implemented in two ways, one relying on NumPy and one relying on Numba.
+Since Numba creates some overhead stemming from the compliation of Python code into machine code, the implementation using NumPy is usually faster than the one using Numba on smaller datsets.
+The NumPy-implementation, however, creates a large temporary array, which can lead to OOM errors on larger datasets, in which case the Numba-implementation must be used.
+Setting `use_numpy=True` during instantiation of an instance of `DowkerRipsComplex` forces the use of the NumPy-implementation; in case of an OOM error, the computation will fall back on the Numba-implementation and a corresponding warning is raised.
+
+---
+
+__Requirements__
+
+Required Python dependencies are specified in `pyproject.toml`.
+Provided that `uv` is installed, these dependencies can be installed by running `uv pip install -r pyproject.toml`.
+The environment specified in `uv.lock` can be recreated by running `uv sync`.
+
+---
+
+__Example of installing AuToMATo from source for `uv` users__
+
+```
+$ git clone github.com/m-a-huber/dowker-rips-complex
+$ cd dowker-rips-complex
+$ uv sync --no-dev
+$ source .venv/bin/activate
+$ python
+>>> from dowker-rips-complex import DowkerRipsComplex
+>>> ...
+```
