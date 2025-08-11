@@ -1,4 +1,4 @@
-Implementation of the Dowker-Rips complex introduced in [<em>Ripsifying the Dowker Complex</em>](TODO).
+Implementation of the Dowker-Rips complex introduced in [<em>Flagifying the Dowker Complex</em>](TODO).
 The complex is implemented as a class named `DowkerRipsComplex` that largely follows the API conventions from `scikit-learn`.
 
 ---
@@ -32,34 +32,34 @@ __Example of running DowkerRipsComplex__
     array([[0.5035793 , 0.55263996]], dtype=float32)]
 ```
 
+The output above is a list of arrays, where the $i$-th array contains (birth, death)-times of homological generators in dimension $i-1$.
+
 Any `DowkerRipsComplex` object accepts further parameters during instantiation.
 A full description of these can be displayed by calling `help(DowkerRipsComplex)`.
 These parameters, among other things, allow the user to specify persistence-related parameters such as the maximal homological dimension to compute or which metric to use.
 
 Behind the scenes, `DowkerRipsComplex` computes the input matrix required for Ripser from a matrix of pairwise distances between vertices and witnesses.
 This process is implemented in two ways, one relying on NumPy and one relying on Numba.
-Since Numba creates some overhead stemming from the compliation of Python code into machine code, the implementation using NumPy is usually faster than the one using Numba on smaller datsets.
+Since Numba creates some overhead stemming from the compilation of Python code into machine code, the NumPy-implementation is usually faster than the Numba-implementation on smaller data sets.
 The NumPy-implementation, however, creates a large temporary array, which can lead to OOM errors on larger datasets, in which case the Numba-implementation must be used.
 Setting `use_numpy=True` during instantiation of an instance of `DowkerRipsComplex` forces the use of the NumPy-implementation; in case of an OOM error, the computation will fall back on the Numba-implementation and a corresponding warning is raised.
 
 ---
 
-__Requirements__
+__Installation and requirements__
 
-Required Python dependencies are specified in `pyproject.toml`.
-Provided that `uv` is installed, these dependencies can be installed by running `uv pip install -r pyproject.toml`.
-The environment specified in `uv.lock` can be recreated by running `uv sync`.
+The package can be installed via `pip` by running `pip install -U dowker-rips-complex`.
+
+Required Python dependencies are specified in `pyproject.toml`. Provided that `uv` is installed, these dependencies can be installed by running `uv pip install -r pyproject.toml`. The environment specified in `uv.lock` can be recreated by running `uv sync`.
 
 ---
 
-__Example of installing `dowker-rips-complex` from source for `uv` users__
+__Installing from PyPI for `uv` users__
 
 ```
-$ git clone github.com/m-a-huber/dowker-rips-complex
-$ cd dowker-rips-complex
-$ uv sync --no-dev
-$ source .venv/bin/activate
-$ python
+$ uv init
+$ uv add dowker-rips-complex
+$ uv run python
 >>> from dowker-rips-complex import DowkerRipsComplex
 >>> ...
 ```
