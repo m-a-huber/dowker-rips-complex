@@ -1,9 +1,12 @@
-Implementation of the Dowker-Rips complex introduced in [<em>Flagifying the Dowker Complex</em>](TODO).
+Implementation of the Dowker-Rips complex introduced in [<em>Flagifying the Dowker Complex</em>](https://arxiv.org/abs/2508.08025).
 The complex is implemented as a class named `DowkerRipsComplex` that largely follows the API conventions from `scikit-learn`.
 
 ---
 
 __Example of running DowkerRipsComplex__
+
+The following is an example of computing persistent homology of the filtered complex $\left\{\mathrm{DR}_{\varepsilon}(X,Y)\right\}_{\varepsilon\in\mathbb{R}^{+}}$, that is, of the Dowker-Rips complex with relations $R_{\varepsilon}\subseteq X\times Y$ defined by $(x,y)\in R_{\varepsilon}$ iff $d(x,y)\leq\varepsilon$ for $\varepsilon\geq 0$, and where $X$ and $Y$ are subsets of $\mathbb{R}^{n}$ equipped with the Euclidean norm.
+In the following example, we refer to $X$ and $Y$ as vertices and witnesses, respectively.
 
 ```
 >>> from dowker_rips_complex import DowkerRipsComplex
@@ -18,21 +21,33 @@ __Example of running DowkerRipsComplex__
 >>> drc = DowkerRipsComplex()  # use default parameters
 >>> persistence = drc.fit_transform([vertices, witnesses])
 >>> persistence
-    [array([[0.07438909, 0.1733489 ],
-            [0.08154549, 0.24042536],
-            [0.17218398, 0.24239226],
-            [0.13146845, 0.25247845],
-            [0.16269606, 0.2926637 ],
-            [0.10576964, 0.32222554],
-            [0.1382231 , 0.358332  ],
-            [0.07358199, 0.3740825 ],
-            [0.39632082, 0.4189592 ],
-            [0.24082384, 0.577262  ],
-            [0.02419385,        inf]], dtype=float32),
-    array([[0.5035793 , 0.55263996]], dtype=float32)]
+[array([[0.07438909, 0.1733489 ],
+        [0.08154549, 0.24042536],
+        [0.17218398, 0.24239226],
+        [0.13146845, 0.25247845],
+        [0.16269606, 0.2926637 ],
+        [0.10576964, 0.32222554],
+        [0.1382231 , 0.358332  ],
+        [0.07358199, 0.3740825 ],
+        [0.39632082, 0.4189592 ],
+        [0.24082384, 0.577262  ],
+        [0.02419385,        inf]], dtype=float32),
+ array([[0.5035793 , 0.55263996]], dtype=float32)]
 ```
 
 The output above is a list of arrays, where the $i$-th array contains (birth, death)-times of homological generators in dimension $i-1$.
+Validity of Dowker-Rips duality can be verified by swapping the roles of vertices as witnesses as follows.
+
+```
+>>> import numpy as np
+>>> persistence_swapped = DowkerRipsComplex().fit_transform([witnesses, vertices])
+>>> all(
+        np.allclose(homology, homology_swapped)
+        for homology, homology_swapped
+        in zip(persistence, persistence_swapped)
+    )
+True
+```
 
 Any `DowkerRipsComplex` object accepts further parameters during instantiation.
 A full description of these can be displayed by calling `help(DowkerRipsComplex)`.
@@ -50,7 +65,9 @@ __Installation and requirements__
 
 The package can be installed via `pip` by running `pip install -U dowker-rips-complex`.
 
-Required Python dependencies are specified in `pyproject.toml`. Provided that `uv` is installed, these dependencies can be installed by running `uv pip install -r pyproject.toml`. The environment specified in `uv.lock` can be recreated by running `uv sync`.
+Required Python dependencies are specified in `pyproject.toml`.
+Provided that `uv` is installed, these dependencies can be installed by running `uv pip install -r pyproject.toml`.
+The environment specified in `uv.lock` can be recreated by running `uv sync`.
 
 ---
 
