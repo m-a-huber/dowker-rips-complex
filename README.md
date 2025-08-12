@@ -5,7 +5,7 @@ The complex is implemented as a class named `DowkerRipsComplex` that largely fol
 
 __Example of running DowkerRipsComplex__
 
-The following is an example of computing persistent homology of the filtered complex $\left\{\mathrm{DR}_{\varepsilon}(X,Y)\right\}_{\varepsilon\in\mathbb{R}^{+}}$, that is, of the Dowker-Rips complex with relations $R_{\varepsilon}\subseteq X\times Y$ defined by $(x,y)\in R_{\varepsilon}$ iff $d(x,y)\leq\varepsilon$ for $\varepsilon\geq 0$, and where $X$ and $Y$ are subsets of $\mathbb{R}^{n}$ equipped with the Euclidean norm.
+The following is an example of computing persistent homology of the filtered complex $`\left\{\mathrm{DR}_{\varepsilon}(X,Y)\right\}_{\varepsilon\in\mathbb{R}^{+}}`$, that is, of the Dowker-Rips complex with relations $R_{\varepsilon}\subseteq X\times Y$ defined by $(x,y)\in R_{\varepsilon}$ iff $d(x,y)\leq\varepsilon$ for $\varepsilon\geq 0$, and where $X$ and $Y$ are subsets of $\mathbb{R}^{n}$ equipped with the Euclidean norm.
 In the following example, we refer to $X$ and $Y$ as vertices and witnesses, respectively.
 
 ```
