@@ -5,8 +5,12 @@ import numpy as np
 import numpy.typing as npt
 from gph import ripser_parallel  # type: ignore
 from numba import jit, prange  # type: ignore
-from sklearn.base import BaseEstimator, TransformerMixin  # type: ignore
-from sklearn.metrics import pairwise_distances  # type: ignore
+from sklearn.base import (  # type: ignore
+    BaseEstimator,
+    TransformerMixin,
+    check_is_fitted,
+)
+from sklearn.metrics import pairwise_distances
 
 
 class DowkerRipsComplex(TransformerMixin, BaseEstimator):
@@ -52,9 +56,20 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
 
     Attributes:
         vertices_ (numpy.ndarray of shape (n_vertices, dim)): NumPy-array
-            containing the vertices.
+            containing the vertices. Note that setting `swap=True` may swap the
+            roles of vertices and witnesses.
         witnesses_ (numpy.ndarray of shape (n_witnesses, dim)): NumPy-array
-            containing the witnesses.
+            containing the witnesses. Note that setting `swap=True` may swap
+            the roles of vertices and witnesses.
+        dm_ (numpy.ndarray of shape (n_vertices, n_witnesses)): NumPy-array
+            containing the pairwise distances between vertices and witnesses.
+            Note that setting `swap=True` may swap the roles of vertices and
+            witnesses.
+        ripser_input_ (numpy.ndarray of shape (n_vertices, n_vertices)): NumPy-
+            array containing the custom distance matrix encoding the Dowker-
+            Rips complex, which is subsequently used for the computation of
+            persistent homology. Note that setting `swap=True` may swap the
+            roles of vertices and witnesses.
         persistence_ (list[numpy.ndarray]): The persistent homology computed
             from the Dowker-Rips simplicial complex. The format of this data is
             a list of NumPy-arrays of dtype float32 and of shape
@@ -62,7 +77,7 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             containing the birth and death times of the homological generators
             in dimension i-1. In particular, the list starts with 0-dimensional
             homology and contains information from consecutive homological
-            dimensions.
+            dimensions. Only present if `transform` has been called.
     """
 
     def __init__(
@@ -97,14 +112,15 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             print(s)
         return
 
-    def fit_transform(
+    def fit(
         self,
         X: list[npt.NDArray],
         y: Optional[None] = None,
-    ) -> list[npt.NDArray[np.float32]]:
-        """Method that fits a `DowkerRipsComplex`-instance to a pair of point
-        clouds consisting of vertices and witnesses by computing the persistent
-        homology of the associated Dowker-Rips complex.
+    ) -> "DowkerRipsComplex":
+        """Method that fits an instance of `DowkerRipsComplex` to a pair of
+        point clouds consisting of vertices and witnesses. Computes the custom
+        distance matrix used in the computation of Dowker-Rips persistent
+        homology in a possible subsequent call to `transform`.
 
         Args:
             X (list[numpy.ndarray]): List containing the NumPy-arrays of
@@ -113,14 +129,11 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
                 scikit-learn.
 
         Returns:
-            list[numpy.ndarray]: The persistent homology computed from the
-                Dowker-Rips simplicial complex. The format of this data is a
-                list of NumPy-arrays of dtype float32 and of shape
-                `(n_generators, 2)`, where the i-th entry of the list is an
-                array containing the birth and death times of the homological
-                generators in dimension i-1. In particular, the list starts
-                with 0-dimensional homology and contains information from
-                consecutive homological dimensions.
+            DowkerRipsComplex: Fitted instance of `DowkerRipsComplex`.
+
+        Raises:
+            ValueError: If the vertices and witnesses are not of the same
+                dimensionality.
         """
         vertices, witnesses = X
         if vertices.shape[1] != witnesses.shape[1]:
@@ -135,7 +148,7 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         self.vertices_ = vertices
         self.witnesses_ = witnesses
         self.vprint(
-            "Complex has (n_vertices, n_witnesses) = "
+            "Dowker-Rips complex has (n_vertices, n_witnesses) = "
             f"{(len(self.vertices_), len(self.witnesses_))}."
         )
         self._labels_vertices_ = np.zeros(len(self.vertices_))
@@ -145,21 +158,59 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             [self._labels_vertices_, self._labels_witnesses_]
         )
         if min(len(self.vertices_), len(self.witnesses_)) == 0:
-            self._ripser_input_ = np.empty((0, 0))
+            self.dm_ = np.empty((len(self.vertices_), len(self.witnesses_)))
+            self.ripser_input_ = np.empty((0, 0))
+        else:
+            self.dm_ = pairwise_distances(
+                X=self.vertices_,
+                Y=self.witnesses_,
+                metric=self.metric,
+                **self.metric_params,
+            )
+            self.vprint("Computing `ripser_input`...")
+            self.ripser_input_ = self._get_ripser_input()
+            self.vprint(
+                "Finished computing `ripser_input`, has shape "
+                f"{self.ripser_input_.shape}."
+            )
+        return self
+
+    def transform(
+        self,
+        X: list[npt.NDArray],
+    ) -> list[npt.NDArray[np.float32]]:
+        """Method that uses the underlying fitted instance of
+        `DowkerRipsComplex` to compute the Dowker-Rips persistent homology of a
+        pair point clouds consisting of vertices and witnesses.
+
+        Args:
+            X (list[numpy.ndarray]): List containing the NumPy-arrays of
+                vertices and witnesses, in this order.
+
+        Returns:
+            list[numpy.ndarray]: The persistent homology computed from the
+                Dowker-Rips simplicial complex. The format of this data is a
+                list of NumPy-arrays of dtype float32 and of shape
+                `(n_generators, 2)`, where the i-th entry of the list is an
+                array containing the birth and death times of the homological
+                generators in dimension i-1. In particular, the list starts
+                with 0-dimensional homology and contains information from
+                consecutive homological dimensions.
+
+        Raises:
+            sklearn.exceptions.NotFittedError: If `fit` has not yet been called
+                on the underlying instance of `DowkerRipsComplex`.
+        """
+        check_is_fitted(self, attributes=["ripser_input_"])
+        if min(len(self.vertices_), len(self.witnesses_)) == 0:
             self.persistence_ = [
                 np.empty((0, 2), dtype=np.float32)
                 for _ in range(self.max_dimension + 1)
             ]
         else:
-            self.vprint("Getting ripser input...")
-            self._ripser_input_ = self._get_ripser_input()
-            self.vprint(
-                "Done getting ripser input, has shape "
-                f"{self._ripser_input_.shape}."
-            )
             self.vprint("Computing persistent homology...")
             self.persistence_ = ripser_parallel(
-                X=self._ripser_input_,
+                X=self.ripser_input_,
                 metric="precomputed",
                 maxdim=self.max_dimension,
                 thresh=self.max_filtration,
@@ -167,22 +218,16 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
                 collapse_edges=self.collapse_edges,
                 n_threads=self.n_threads,
             )["dgms"]
-            self.vprint("Done computing persistent homology.")
+            self.vprint("Finished computing persistent homology.")
         return self.persistence_
 
     def _get_ripser_input(
         self,
     ):
-        self._dm_ = pairwise_distances(
-            X=self.vertices_,
-            Y=self.witnesses_,
-            metric=self.metric,
-            **self.metric_params,
-        )
         if self.use_numpy:
             try:
                 return np.min(
-                    np.maximum(self._dm_.T[:, :, None], self._dm_[None, :, :]),
+                    np.maximum(self.dm_.T[:, :, None], self.dm_[None, :, :]),
                     axis=1,
                 )
             except MemoryError:
@@ -193,7 +238,7 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
                 )
 
         @jit(nopython=True, parallel=True)
-        def _ripser_input_numba(dm):
+        def ripser_input_numba(dm):
             n = dm.shape[0]
             ripser_input = np.empty((n, n))
             for i in prange(n):
@@ -203,4 +248,4 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
                     ripser_input[j, i] = dist
             return ripser_input
 
-        return _ripser_input_numba(self._dm_)
+        return ripser_input_numba(self.dm_)
