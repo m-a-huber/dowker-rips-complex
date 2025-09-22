@@ -182,17 +182,14 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         if self.use_numpy:
             try:
                 return np.min(
-                    np.maximum(
-                        self._dm_.T[:, :, None],
-                        self._dm_[None, :, :]
-                    ),
+                    np.maximum(self._dm_.T[:, :, None], self._dm_[None, :, :]),
                     axis=1,
                 )
             except MemoryError:
                 warnings.warn(
                     "NumPy implementation ran out of memory; "
                     "falling back to Numba.",
-                    RuntimeWarning
+                    RuntimeWarning,
                 )
 
         @jit(nopython=True, parallel=True)
@@ -205,6 +202,5 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
                     ripser_input[i, j] = dist
                     ripser_input[j, i] = dist
             return ripser_input
-        return _ripser_input_numba(
-            self._dm_
-        )
+
+        return _ripser_input_numba(self._dm_)

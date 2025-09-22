@@ -12,8 +12,10 @@ def random_data():
     n, dim = 500, 512
     ratio_vertices = 0.9
     X, y = (
-        list(train_test_split(
-            rng.standard_normal(size=(n, dim)), train_size=ratio_vertices)
+        list(
+            train_test_split(
+                rng.standard_normal(size=(n, dim)), train_size=ratio_vertices
+            )
         ),
         None,
     )
@@ -22,18 +24,8 @@ def random_data():
 
 @pytest.fixture
 def quadrilateral():
-    vertices = np.array([
-        [0, 0],
-        [2, 0],
-        [4, 2],
-        [0, 4]
-    ])
-    witnesses = np.array([
-        [2, 3],
-        [0, 2],
-        [1, 0],
-        [3, 1]
-    ])
+    vertices = np.array([[0, 0], [2, 0], [4, 2], [0, 4]])
+    witnesses = np.array([[2, 3], [0, 2], [1, 0], [3, 1]])
     X, y = [vertices, witnesses], None
     return X, y
 
@@ -41,18 +33,8 @@ def quadrilateral():
 @pytest.fixture
 def octagon():
     t = 1 / np.sqrt(2)
-    vertices = np.array([
-        [1, 0],
-        [t, t],
-        [0, 1],
-        [-t, t]
-    ])
-    witnesses = np.array([
-        [-1, 0],
-        [-t, -t],
-        [0, -1],
-        [t, -t]
-    ])
+    vertices = np.array([[1, 0], [t, t], [0, 1], [-t, t]])
+    witnesses = np.array([[-1, 0], [-t, -t], [0, -1], [t, -t]])
     X, y = [vertices, witnesses], None
     return X, y
 
@@ -96,16 +78,8 @@ def test_dowker_rips_complex_empty_vertices():
     drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
     assert len(drc.persistence_) == 2
-    assert (
-        drc.persistence_[0] == np.empty(
-            (0, 2)
-        )
-    ).all()
-    assert (
-        drc.persistence_[1] == np.empty(
-            (0, 2)
-        )
-    ).all()
+    assert (drc.persistence_[0] == np.empty((0, 2))).all()
+    assert (drc.persistence_[1] == np.empty((0, 2))).all()
 
 
 def test_dowker_rips_complex_empty_witnesses():
@@ -123,16 +97,8 @@ def test_dowker_rips_complex_empty_witnesses():
     drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
     assert len(drc.persistence_) == 2
-    assert (
-        drc.persistence_[0] == np.empty(
-            (0, 2)
-        )
-    ).all()
-    assert (
-        drc.persistence_[1] == np.empty(
-            (0, 2)
-        )
-    ).all()
+    assert (drc.persistence_[0] == np.empty((0, 2))).all()
+    assert (drc.persistence_[1] == np.empty((0, 2))).all()
 
 
 def test_dowker_rips_complex_empty_witnesses_no_swap():
@@ -151,16 +117,8 @@ def test_dowker_rips_complex_empty_witnesses_no_swap():
     drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
     assert len(drc.persistence_) == 2
-    assert (
-        drc.persistence_[0] == np.empty(
-            (0, 2)
-        )
-    ).all()
-    assert (
-        drc.persistence_[1] == np.empty(
-            (0, 2)
-        )
-    ).all()
+    assert (drc.persistence_[0] == np.empty((0, 2))).all()
+    assert (drc.persistence_[1] == np.empty((0, 2))).all()
 
 
 def test_dowker_rips_complex_quadrilateral(quadrilateral):
@@ -173,16 +131,11 @@ def test_dowker_rips_complex_quadrilateral(quadrilateral):
     assert hasattr(drc, "persistence_")
     assert len(drc.persistence_) == 2
     assert (
-        drc.persistence_[0] == np.array(
-            [[1, np.inf]],
-            dtype=np.float32
-        )
+        drc.persistence_[0] == np.array([[1, np.inf]], dtype=np.float32)
     ).all()
     assert (
-        drc.persistence_[1] == np.array(
-            [[np.sqrt(5), np.sqrt(8)]],
-            dtype=np.float32
-        )
+        drc.persistence_[1]
+        == np.array([[np.sqrt(5), np.sqrt(8)]], dtype=np.float32)
     ).all()
 
 
@@ -198,10 +151,8 @@ def test_dowker_rips_complex_octagon(octagon):
     birth = np.sqrt(2 - np.sqrt(2))
     death = np.sqrt(2 + np.sqrt(2))
     assert (
-        drc.persistence_[0] == np.array([
-            [birth, death],
-            [birth, np.inf]
-        ], dtype=np.float32)
+        drc.persistence_[0]
+        == np.array([[birth, death], [birth, np.inf]], dtype=np.float32)
     ).all()
     assert (
         drc.persistence_[1] == np.empty(shape=(0, 2)).astype(np.float32)
