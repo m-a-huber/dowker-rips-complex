@@ -23,9 +23,17 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         max_dimension (int, optional): The maximum homology dimension computed.
             Will compute all dimensions lower than or equal to this value.
             Defaults to `1`.
-        max_filtration (float, optional): The Maximum value of the Dowker-Rips
+        return_generators (bool, optional): Whether to return information on
+            the simplex pairs and essential simplices corresponding to the
+            finite and infinite bars (respectively) in the persistence barcode
+            (see the documentation of `giotto-ph.ripser_parallel` for details).
+            If True, this information is stored in the return dictionary under
+            the key gens. Cannot be True if collapse_edges is also True.
+            Defaults to `False`.
+        max_filtration (float, optional): The maximum value of the Dowker-Rips
             filtration parameter. If `np.inf`, the entire filtration is
-            computed. Defaults to `np.inf`.
+            computed. Note that the death time of generators persisting until
+            `max_filtration` will equal `np.inf`. Defaults to `np.inf`.
         coeff (int, optional): The field coefficient used in the computation of
             homology. Defaults to `2`.
         metric (str, optional): The metric used to compute distance between
@@ -33,13 +41,13 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             ``sklearn.metrics.pairwise.PAIRWISE_DISTANCE_FUNCTIONS``.
             Defaults to `"euclidean"`.
         metric_params (dict, optional): Additional parameters to be passed to
-            the distance function. Defaults to `dict()`.
+            the distance function. Defaults to `None` (empty dict).
         use_numpy (bool, optional): Whether or not to use NumPy instead of
-            Numba to compute the input to `ripser_parallel` from the matrix of
-            pairwise distances. The Numba implementation does not suffer from
-            OOM errors, and will be fallen back to if `use_numpy` is set to
-            `True` and the NumPy implementation results in such an error.
-            Defaults to `False`.
+            Numba to compute the input to `giotto-ph.ripser_parallel` from
+            the matrix of pairwise distances. The Numba implementation does
+            not suffer from out-of-memory (OOM) errors, and will be used
+            instead if `use_numpy` is set to `True` and the NumPy
+            implementation results in such an error. Defaults to `False`.
         collapse_edges (bool, optional): Whether to collapse edges prior to
             computing persistence in order to speed up that computation. Not
             recommended unless for very large datasets. Defaults to `False`.
@@ -50,7 +58,13 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         swap (bool, optional): Whether or not to potentially swap the roles of
             vertices and witnesses to compute the less expensive variant of
             persistent homology. Note that this may affect the resulting
-            persistence in dimensions two and higher. Defaults to `True`.
+            persistence in dimensions two and higher. Defaults to `False`.
+        force_finite (bool, optional): Provided that the filtration is not
+            already capped at some finite value by setting of `max_filtration`,
+            setting this to `True` ensures that all lifetimes are finite by
+            setting `max_filtration` to the maximum filtration value among all
+            simplices. Ignored unless `max_filtration` is set to `np.inf`.
+            Defaults to `False`.
         verbose (bool, optional): Whether or not to display information such as
             computation progress. Defaults to `False`.
 
@@ -70,6 +84,9 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             Rips complex, which is subsequently used for the computation of
             persistent homology. Note that setting `swap=True` may swap the
             roles of vertices and witnesses.
+        max_filtration_ (float): The effective threshold at which the
+            filtration is capped. If `force_finite` is set to `True`, this may
+            differ from the value that was provided for `max_filtration`.
         persistence_ (list[numpy.ndarray]): The persistent homology computed
             from the Dowker-Rips simplicial complex. The format of this data is
             a list of NumPy-arrays of dtype float32 and of shape
@@ -78,22 +95,45 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             in dimension i-1. In particular, the list starts with 0-dimensional
             homology and contains information from consecutive homological
             dimensions. Only present if `transform` has been called.
+        generators_ (tuple[numpy.ndarray | list[numpy.ndarray]]): Information
+            on the simplex pairs and essential simplices generating the points
+            in 'dgms'. Each simplex of dimension 1 or above is replaced with
+            the vertices of the edges that gave it its filtration value. The 4
+            entries of this tuple are as follows:
+
+            index 0 (numpy.ndarray of shape (n_finite_bars_0_dim, 3)):
+                Simplex pairs corresponding to finite bars in dimension 0, with
+                one vertex for birth and two vertices for death.
+            index 1 (numpy.ndarray of shape (n_finite_bars_k_dim, 4)):
+                Simplex pairs corresponding to finite bars in dimensions 1 to
+                the maximum dimension computed, with two vertices
+                (representing one edge) for birth and two for death.
+            index 2 (numpy.ndarray of shape (n_infinite_bars_0_dim, 1)):
+                Essential simplices corresponding to infinite bars in dimension
+                0, with one vertex for each birth.
+            index 3 (numpy.ndarray of shape (n_infinite_bars_k_dim, 2)):
+                Essential simplices corresponding to infinite bars in
+                dimensions 1 to the maximum dimension computed, with 2 vertices
+                (representing one edge) for each birth.
     """
 
     def __init__(
         self,
         max_dimension: int = 1,
+        return_generators: bool = False,
         max_filtration: float = np.inf,
         coeff: int = 2,
         metric: str = "euclidean",
-        metric_params: dict = dict(),
+        metric_params: Optional[dict] = None,
         use_numpy: bool = False,
         collapse_edges: bool = False,
         n_threads: int = 1,
-        swap: bool = True,
+        swap: bool = False,
+        force_finite: bool = False,
         verbose: bool = False,
     ) -> None:
         self.max_dimension = max_dimension
+        self.return_generators = return_generators
         self.max_filtration = max_filtration
         self.coeff = coeff
         self.metric = metric
@@ -102,6 +142,7 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         self.collapse_edges = collapse_edges
         self.n_threads = n_threads
         self.swap = swap
+        self.force_finite = force_finite
         self.verbose = verbose
 
     def vprint(
@@ -115,7 +156,7 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
     def fit(
         self,
         X: list[npt.NDArray],
-        y: Optional[None] = None,
+        y: None = None,  # noqa: ARG002
     ) -> "DowkerRipsComplex":
         """Method that fits an instance of `DowkerRipsComplex` to a pair of
         point clouds consisting of vertices and witnesses. Computes the custom
@@ -132,15 +173,27 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             DowkerRipsComplex: Fitted instance of `DowkerRipsComplex`.
 
         Raises:
-            ValueError: If the vertices and witnesses are not of the same
-                dimensionality.
+            ValueError: If X does not contain exactly 2 arrays; if the arrays
+                are not 2D; or if the vertices and witnesses are not of the
+                same dimensionality.
         """
+        if len(X) != 2:
+            raise ValueError(
+                f"X must contain exactly 2 arrays (vertices and witnesses); "
+                f"received {len(X)} arrays"
+            )
         vertices, witnesses = X
+        if vertices.ndim != 2 or witnesses.ndim != 2:
+            raise ValueError(
+                "Vertices and witnesses must be 2D arrays; "
+                f"received vertices.ndim={vertices.ndim} and "
+                f"witnesses.ndim={witnesses.ndim}"
+            )
         if vertices.shape[1] != witnesses.shape[1]:
             raise ValueError(
-                "The vertices and witnesses should be of the same "
+                "The vertices and witnesses must be of the same "
                 f"dimensionality; received dim(vertices)={vertices.shape[1]} "
-                f"and dim(witnesses)={witnesses.shape[1]}."
+                f"and dim(witnesses)={witnesses.shape[1]}"
             )
         if self.swap and len(vertices) > len(witnesses):
             vertices, witnesses = witnesses, vertices
@@ -161,6 +214,11 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             self.dm_ = np.empty((len(self.vertices_), len(self.witnesses_)))
             self.ripser_input_ = np.empty((0, 0))
         else:
+            self.metric_params = (
+                self.metric_params
+                if self.metric_params is not None
+                else dict()
+            )
             self.dm_ = pairwise_distances(
                 X=self.vertices_,
                 Y=self.witnesses_,
@@ -173,19 +231,25 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
                 "Finished computing `ripser_input`, has shape "
                 f"{self.ripser_input_.shape}."
             )
+        if self.force_finite and self.max_filtration == np.inf:
+            self.max_filtration_ = np.max(self.ripser_input_)
+        else:
+            self.max_filtration_ = self.max_filtration
         return self
 
     def transform(
         self,
-        X: list[npt.NDArray],
+        X: Optional[list[npt.NDArray]] = None,  # noqa: ARG002
     ) -> list[npt.NDArray[np.float32]]:
         """Method that uses the underlying fitted instance of
         `DowkerRipsComplex` to compute the Dowker-Rips persistent homology of a
-        pair point clouds consisting of vertices and witnesses.
+        pair of point clouds consisting of vertices and witnesses.
 
         Args:
-            X (list[numpy.ndarray]): List containing the NumPy-arrays of
-                vertices and witnesses, in this order.
+            X (list[numpy.ndarray], optional): List containing the NumPy-arrays
+                of vertices and witnesses, in this order. This parameter is
+                ignored as the computation uses the data from `fit`, and is
+                present for API consistency with scikit-learn.
 
         Returns:
             list[numpy.ndarray]: The persistent homology computed from the
@@ -207,27 +271,42 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
                 np.empty((0, 2), dtype=np.float32)
                 for _ in range(self.max_dimension + 1)
             ]
+            if self.return_generators:
+                self.generators_ = (
+                    np.empty((0, 3), dtype=np.int64),
+                    np.empty((0, 4), dtype=np.int64),
+                    np.empty((0, 1), dtype=np.int64),
+                    np.empty((0, 2), dtype=np.int64),
+                )
         else:
             self.vprint("Computing persistent homology...")
-            self.persistence_ = ripser_parallel(
+            ripser_result = ripser_parallel(
                 X=self.ripser_input_,
                 metric="precomputed",
                 maxdim=self.max_dimension,
-                thresh=self.max_filtration,
+                thresh=self.max_filtration_,
                 coeff=self.coeff,
                 collapse_edges=self.collapse_edges,
                 n_threads=self.n_threads,
-            )["dgms"]
+                return_generators=self.return_generators,
+            )
+            self.persistence_ = ripser_result.get("dgms")
+            # Cast generator information to NumPy and reshape for consistency
+            if self.return_generators:
+                self.generators_ = tuple(
+                    np.asarray(g).reshape(-1, size)
+                    for g, size in zip(ripser_result.get("gens"), (3, 4, 1, 2))
+                )
             self.vprint("Finished computing persistent homology.")
         return self.persistence_
 
     def _get_ripser_input(
         self,
-    ):
+    ) -> npt.NDArray[np.float64]:
         if self.use_numpy:
             try:
                 return np.min(
-                    np.maximum(self.dm_.T[:, :, None], self.dm_[None, :, :]),
+                    np.maximum(self.dm_[:, :, None], self.dm_.T[None, :, :]),
                     axis=1,
                 )
             except MemoryError:
