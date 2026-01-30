@@ -74,6 +74,17 @@ def test_dowker_rips_complex_not_fitted_error(random_data):
         drc.transform(X)
 
 
+def test_dowker_rips_complex_collapse_edges_and_return_generators(random_data):
+    """
+    Check that `DowkerRipsComplex` raises a `ValueError` exception when
+    both `collapse_edges` and `return_generators` are set to True.
+    """
+    X, y = random_data
+    drc = DowkerRipsComplex(collapse_edges=True, return_generators=True)
+    with pytest.raises(ValueError):
+        drc.fit(X, y)
+
+
 def test_dowker_rips_complex_separate_calls(random_data):
     """
     Check whether `DowkerRipsComplex` runs on random data when `fit` and
@@ -84,6 +95,57 @@ def test_dowker_rips_complex_separate_calls(random_data):
     drc.fit(X, y)
     drc.transform(X)
     assert hasattr(drc, "persistence_")
+
+
+def test_dowker_rips_complex_fit_wrong_number_of_arrays():
+    """
+    Check that `fit` raises ValueError when X does not contain exactly 2
+    arrays.
+    """
+    drc = DowkerRipsComplex()
+    X_one = [rng.standard_normal(size=(10, 2))]
+    with pytest.raises(ValueError):
+        drc.fit(X_one)
+    X_three = [
+        rng.standard_normal(size=(10, 2)),
+        rng.standard_normal(size=(10, 2)),
+        rng.standard_normal(size=(10, 2)),
+    ]
+    with pytest.raises(ValueError):
+        drc.fit(X_three)
+
+
+def test_dowker_rips_complex_fit_not_2d():
+    """
+    Check that `fit` raises ValueError when vertices or witnesses are not 2D.
+    """
+    drc = DowkerRipsComplex()
+    X_1d = [
+        rng.standard_normal(size=(10)),
+        rng.standard_normal(size=(10)),
+    ]
+    with pytest.raises(ValueError):
+        drc.fit(X_1d)
+    X_3d = [
+        rng.standard_normal(size=(10, 10, 10)),
+        rng.standard_normal(size=(10, 10, 10)),
+    ]
+    with pytest.raises(ValueError):
+        drc.fit(X_3d)
+
+
+def test_dowker_rips_complex_fit_dimension_mismatch():
+    """
+    Check that `fit` raises ValueError when vertex and witness dimensions
+    differ.
+    """
+    drc = DowkerRipsComplex()
+    X = [
+        rng.standard_normal(size=(10, 1)),
+        rng.standard_normal(size=(10, 3)),
+    ]
+    with pytest.raises(ValueError):
+        drc.fit(X)
 
 
 def test_dowker_rips_complex_empty_vertices():
@@ -102,8 +164,8 @@ def test_dowker_rips_complex_empty_vertices():
     drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
     assert len(drc.persistence_) == 2
-    assert (drc.persistence_[0] == np.empty((0, 2))).all()
-    assert (drc.persistence_[1] == np.empty((0, 2))).all()
+    assert drc.persistence_[0].shape == (0, 2)
+    assert drc.persistence_[1].shape == (0, 2)
 
 
 def test_dowker_rips_complex_empty_witnesses():
@@ -121,8 +183,8 @@ def test_dowker_rips_complex_empty_witnesses():
     drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
     assert len(drc.persistence_) == 2
-    assert (drc.persistence_[0] == np.empty((0, 2))).all()
-    assert (drc.persistence_[1] == np.empty((0, 2))).all()
+    assert drc.persistence_[0].shape == (0, 2)
+    assert drc.persistence_[1].shape == (0, 2)
 
 
 def test_dowker_rips_complex_empty_witnesses_no_swap():
@@ -141,8 +203,8 @@ def test_dowker_rips_complex_empty_witnesses_no_swap():
     drc.fit_transform(X, y)
     assert hasattr(drc, "persistence_")
     assert len(drc.persistence_) == 2
-    assert (drc.persistence_[0] == np.empty((0, 2))).all()
-    assert (drc.persistence_[1] == np.empty((0, 2))).all()
+    assert drc.persistence_[0].shape == (0, 2)
+    assert drc.persistence_[1].shape == (0, 2)
 
 
 def test_dowker_rips_complex_quadrilateral(quadrilateral):
@@ -178,6 +240,4 @@ def test_dowker_rips_complex_octagon(octagon):
         drc.persistence_[0]
         == np.array([[birth, death], [birth, np.inf]], dtype=np.float32)
     ).all()
-    assert (
-        drc.persistence_[1] == np.empty(shape=(0, 2)).astype(np.float32)
-    ).all()
+    assert drc.persistence_[1].shape == (0, 2)
