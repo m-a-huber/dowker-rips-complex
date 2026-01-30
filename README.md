@@ -36,7 +36,7 @@ In the following example, we refer to $`X`$ and $`Y`$ as vertices and witnesses,
 ```
 
 The output above is a list of arrays, where the $`i`$-th array contains (birth, death)-times of homological generators in dimension $`i-1`$.
-Validity of Dowker-Rips duality can be verified by swapping the roles of vertices as witnesses as follows.
+Validity of Dowker-Rips duality can be verified by swapping the roles of vertices and witnesses as follows.
 
 ```
 >>> import numpy as np

@@ -23,13 +23,10 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         max_dimension (int, optional): The maximum homology dimension computed.
             Will compute all dimensions lower than or equal to this value.
             Defaults to `1`.
-        return_generators (bool, optional): Whether to return information on
+        return_generators (bool, optional): Whether to compute information on
             the simplex pairs and essential simplices corresponding to the
-            finite and infinite bars (respectively) in the persistence barcode
-            (see the documentation of `giotto-ph.ripser_parallel` for details).
-            If True, this information is stored in the return dictionary under
-            the key gens. Cannot be True if collapse_edges is also True.
-            Defaults to `False`.
+            finite and infinite bars (respectively) in the persistence barcode.
+            Cannot be True if collapse_edges is also True. Defaults to `False`.
         max_filtration (float, optional): The maximum value of the Dowker-Rips
             filtration parameter. If `np.inf`, the entire filtration is
             computed. Note that the death time of generators persisting until
@@ -59,12 +56,6 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             vertices and witnesses to compute the less expensive variant of
             persistent homology. Note that this may affect the resulting
             persistence in dimensions two and higher. Defaults to `False`.
-        force_finite (bool, optional): Provided that the filtration is not
-            already capped at some finite value by setting of `max_filtration`,
-            setting this to `True` ensures that all lifetimes are finite by
-            setting `max_filtration` to the maximum filtration value among all
-            simplices. Ignored unless `max_filtration` is set to `np.inf`.
-            Defaults to `False`.
         verbose (bool, optional): Whether or not to display information such as
             computation progress. Defaults to `False`.
 
@@ -84,9 +75,6 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             Rips complex, which is subsequently used for the computation of
             persistent homology. Note that setting `swap=True` may swap the
             roles of vertices and witnesses.
-        max_filtration_ (float): The effective threshold at which the
-            filtration is capped. If `force_finite` is set to `True`, this may
-            differ from the value that was provided for `max_filtration`.
         persistence_ (list[numpy.ndarray]): The persistent homology computed
             from the Dowker-Rips simplicial complex. The format of this data is
             a list of NumPy-arrays of dtype float32 and of shape
@@ -97,8 +85,10 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             dimensions. Only present if `transform` has been called.
         generators_ (tuple[numpy.ndarray | list[numpy.ndarray]]): Information
             on the simplex pairs and essential simplices generating the points
-            in 'dgms'. Each simplex of dimension 1 or above is replaced with
-            the vertices of the edges that gave it its filtration value. The 4
+            in 'dgms' (cf. the documentation of `giotto-ph.ripser_parallel` for
+            details). This attribute is only present if `return_generators` is
+            True. Each simplex of dimension 1 or above is replaced with the
+            vertices of the edges that gave it its filtration value. The four
             entries of this tuple are as follows:
 
             index 0 (numpy.ndarray of shape (n_finite_bars_0_dim, 3)):
@@ -129,7 +119,6 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         collapse_edges: bool = False,
         n_threads: int = 1,
         swap: bool = False,
-        force_finite: bool = False,
         verbose: bool = False,
     ) -> None:
         self.max_dimension = max_dimension
@@ -142,7 +131,6 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         self.collapse_edges = collapse_edges
         self.n_threads = n_threads
         self.swap = swap
-        self.force_finite = force_finite
         self.verbose = verbose
 
     def vprint(
@@ -195,6 +183,10 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
                 f"dimensionality; received dim(vertices)={vertices.shape[1]} "
                 f"and dim(witnesses)={witnesses.shape[1]}"
             )
+        if self.collapse_edges and self.return_generators:
+            raise ValueError(
+                "`collapse_edges` and `return_generators` cannot both be True."
+            )
         if self.swap and len(vertices) > len(witnesses):
             vertices, witnesses = witnesses, vertices
             self.vprint("Swapped roles of vertices and witnesses.")
@@ -231,10 +223,6 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
                 "Finished computing `ripser_input`, has shape "
                 f"{self.ripser_input_.shape}."
             )
-        if self.force_finite and self.max_filtration == np.inf:
-            self.max_filtration_ = np.max(self.ripser_input_)
-        else:
-            self.max_filtration_ = self.max_filtration
         return self
 
     def transform(
@@ -284,7 +272,7 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
                 X=self.ripser_input_,
                 metric="precomputed",
                 maxdim=self.max_dimension,
-                thresh=self.max_filtration_,
+                thresh=self.max_filtration,
                 coeff=self.coeff,
                 collapse_edges=self.collapse_edges,
                 n_threads=self.n_threads,
@@ -294,8 +282,10 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
             # Cast generator information to NumPy and reshape for consistency
             if self.return_generators:
                 self.generators_ = tuple(
-                    np.asarray(g).reshape(-1, size)
-                    for g, size in zip(ripser_result.get("gens"), (3, 4, 1, 2))
+                    np.asarray(generators).reshape(-1, size)
+                    for generators, size in zip(
+                        ripser_result.get("gens"), (3, 4, 1, 2)
+                    )
                 )
             self.vprint("Finished computing persistent homology.")
         return self.persistence_
