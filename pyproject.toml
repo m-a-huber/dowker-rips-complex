@@ -1,10 +1,10 @@
 [project]
 name = "dowker-rips-complex"
-version = "0.2.0"
+version = "1.0.0"
 description = "Implementation of the Dowker-Rips complex."
 readme = "README.md"
 authors = [
-    { name = "m-a-huber"}
+    { name = "m-a-huber" }
 ]
 requires-python = ">=3.10"
 license = "MIT"
