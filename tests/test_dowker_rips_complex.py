@@ -1,9 +1,9 @@
 import numpy as np
-import pytest  # type: ignore
-from sklearn.exceptions import NotFittedError  # type: ignore
-from sklearn.model_selection import train_test_split  # type: ignore
+import pytest
+from sklearn.exceptions import NotFittedError
+from sklearn.model_selection import train_test_split
 
-from dowker_rips_complex import DowkerRipsComplex  # type: ignore
+from drc import DowkerRipsComplex
 
 rng = np.random.default_rng(42)
 
@@ -68,7 +68,7 @@ def test_dowker_rips_complex_not_fitted_error(random_data):
     Check that `DowkerRipsComplex` raises a `NotFittedError` exception when
     calling `transform` without calling `fit` first on random data.
     """
-    X, y = random_data
+    X, _ = random_data
     drc = DowkerRipsComplex()
     with pytest.raises(NotFittedError):
         drc.transform(X)

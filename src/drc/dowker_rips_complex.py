@@ -3,9 +3,9 @@ from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
-from gph import ripser_parallel  # type: ignore
-from numba import jit, prange  # type: ignore
-from sklearn.base import (  # type: ignore
+from gph import ripser_parallel
+from numba import jit, prange
+from sklearn.base import (
     BaseEstimator,
     TransformerMixin,
     check_is_fitted,
@@ -320,7 +320,7 @@ class DowkerRipsComplex(TransformerMixin, BaseEstimator):
         def ripser_input_numba(dm):
             n = dm.shape[0]
             ripser_input = np.empty((n, n))
-            for i in prange(n):
+            for i in prange(n):  # ty:ignore[not-iterable]
                 for j in range(i, n):
                     dist = np.min(np.maximum(dm[i], dm[j]))
                     ripser_input[i, j] = dist
